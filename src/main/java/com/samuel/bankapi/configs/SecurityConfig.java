@@ -33,7 +33,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable) // disable CSRF
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/users/register", "/api/users/login").permitAll() // allow access to /register without authentication
+                        .requestMatchers("/api/users/register", "/api/users/login", "api/roles", "api/account-types").permitAll() // allow access to /register without authentication
                         .anyRequest().authenticated() // secure all other requests
                 )
                 //.formLogin(Customizer.withDefaults()) // a form login for browsers

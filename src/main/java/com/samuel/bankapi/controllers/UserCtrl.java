@@ -1,5 +1,6 @@
 package com.samuel.bankapi.controllers;
 
+import com.samuel.bankapi.UserException;
 import com.samuel.bankapi.models.LoginDto;
 import com.samuel.bankapi.models.User;
 import com.samuel.bankapi.services.UserService;
@@ -19,21 +20,18 @@ public class UserCtrl {
 
     @GetMapping("")
     public ResponseEntity<List<User>> getUsers() {
-        System.out.println("Getting users");
         List<User> users = userService.getUsers();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
-        System.out.println("User: " + user);
         return userService.registerUser(user);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
         try {
-            System.out.println("User: " + user);
             LoginDto loggedInUser = userService.loginUser(user);
             return new ResponseEntity<>(loggedInUser, HttpStatus.OK);
         } catch (BadCredentialsException e) {
@@ -46,6 +44,45 @@ public class UserCtrl {
         }
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody User user) {
+        try {
+            User updatedUser = userService.updateUser(id, user);
+            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        }
+        catch (UserException.UserNotFoundException e) {
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.NOT_FOUND);
+        }
+        catch (Exception e) {
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable String id) {
+        try {
+            if (!userService.isExists(id)) {
+                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            }
+            userService.deleteUser(id);
+            return new ResponseEntity<>("User deleted", HttpStatus.OK);
+        }
+        catch (UserException.UserNotFoundException e) {
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.NOT_FOUND);
+        }
+        catch (Exception e) {
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 
 

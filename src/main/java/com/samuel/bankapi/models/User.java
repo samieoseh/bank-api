@@ -40,16 +40,16 @@ public class User {
     @Column(nullable = false)
     private Double balance;
 
-//    @ManyToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "account_type_id", nullable = false)
-//    private AccountType accountType;
+    @ManyToOne(cascade = CascadeType.MERGE)
+    @JoinColumn(name = "account_type_id", nullable = false)
+    private AccountType accountType;
 
-//    @ManyToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "user_role_id", nullable = false)
-//    private Role userRole;
+    @ManyToOne(cascade = CascadeType.MERGE)
+    @JoinColumn(name = "user_role_id", nullable = false)
+    private Role userRole;
 
     @Column(nullable = false)
-    private boolean isActive;
+    private boolean active;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastLoginAt;
@@ -60,13 +60,13 @@ public class User {
     private String profilePictureUrl;
 
     @Column(nullable = false)
-    private boolean isEmailVerified;
+    private boolean emailVerified;
 
     @Column(nullable = false)
-    private boolean isPhoneNumberVerified;
+    private boolean phoneNumberVerified;
 
     @Column(nullable = false)
-    private boolean hasTwoFactorAuthEnabled;
+    private boolean twoFactorAuthEnabled;
 
     @Column(nullable = false)
     private int failedLoginAttempts;
