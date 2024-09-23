@@ -17,8 +17,7 @@ public class AccountType {
 
     @Column(nullable = false)
     private String typeName; // e.g Checking, Savings, Loan etc
-
-    @Column(nullable = false)
+    
     private String description;
 
     @Column(nullable = false)
