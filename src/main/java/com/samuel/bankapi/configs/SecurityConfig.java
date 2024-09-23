@@ -1,3 +1,4 @@
+
 package com.samuel.bankapi.configs;
 
 import com.samuel.bankapi.filters.JwtFilter;
@@ -11,31 +12,38 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-//@EnableWebSecurity
+@EnableWebSecurity
 public class SecurityConfig {
     @Autowired
-    private UserDetailsService userDetailsService;
+    private  UserDetailsService userDetailsService;
 
     @Autowired
     private JwtFilter jwtFilter;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws  Exception {
-        // overides the default security filters of spring security
+    public SecurityFilterChain securityFilterChain ( HttpSecurity http) throws Exception {
         return http
-                .csrf(customizer -> customizer.disable())
-                .authorizeHttpRequests(request -> request.requestMatchers("/api/users/register", "/api/users/login").permitAll().anyRequest().authenticated())
+                .csrf(AbstractHttpConfigurer::disable) // disable CSRF
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers("/api/users/register", "/api/users/login").permitAll() // allow access to /register without authentication
+                        .anyRequest().authenticated() // secure all other requests
+                )
+                //.formLogin(Customizer.withDefaults()) // a form login for browsers
                 .httpBasic(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))// for postman
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
+    // we want to use a database instead of in memory
     @Bean
     AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -45,7 +53,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws  Exception {
+    AuthenticationManager authenticationManager (AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
