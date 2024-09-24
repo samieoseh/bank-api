@@ -39,7 +39,7 @@ public class AccountTypeCtrl {
     public ResponseEntity<?> deleteAccountType(@PathVariable String id) {
         if(accountTypeService.isExists(id)) {
             accountTypeService.deleteAccountType(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // this is the correct status code for delete
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
