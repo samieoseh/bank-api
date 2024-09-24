@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3005:3005"
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://dpg-croufvg8fa8c73dpqe4g-a.oregon-postgres.render.com/bank_postgresql
+      - SPRING_DATASOURCE_USERNAME=bank_postgresql_user
+      - SPRING_DATASOURCE_PASSWORD=7ZqSM0pymsdUBBRs7bXtDcexqJ3hdBcI
+      - SPRING_JPA_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+    restart: always
+
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=7ZqSM0pymsdUBBRs7bXtDcexqJ3hdBcI
+      - POSTGRES_PASSWORD=bank_postgresql_user
+      - POSTGRES_DB=bankdatabase
