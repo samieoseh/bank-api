@@ -1,6 +1,6 @@
 package com.samuel.bankapi.controllers;
 
-import com.samuel.bankapi.models.AccountType;
+import com.samuel.bankapi.models.entities.AccountType;
 import com.samuel.bankapi.services.AccountTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

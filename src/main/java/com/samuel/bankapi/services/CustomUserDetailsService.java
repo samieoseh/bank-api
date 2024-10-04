@@ -1,7 +1,7 @@
 
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.models.User;
+import com.samuel.bankapi.models.entities.User;
 import com.samuel.bankapi.models.UserPrincipal;
 import com.samuel.bankapi.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;

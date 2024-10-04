@@ -1,6 +1,6 @@
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.models.Role;
+import com.samuel.bankapi.models.entities.Role;
 import com.samuel.bankapi.repositories.RoleRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,8 +1,8 @@
 package com.samuel.bankapi.services;
 
 import com.samuel.bankapi.UserException;
-import com.samuel.bankapi.models.LoginDto;
-import com.samuel.bankapi.models.User;
+import com.samuel.bankapi.models.dto.LoginDto;
+import com.samuel.bankapi.models.entities.User;
 import com.samuel.bankapi.models.UserPrincipal;
 import com.samuel.bankapi.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +10,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +36,13 @@ public class UserService {
     }
 
     public User registerUser(User user) {
-        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword())); // hash password
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        user.setTransactionPin(bCryptPasswordEncoder.encode(user.getTransactionPin()));// hash password
+
+        // check if user.accountNumber is unique
+        if (userRepo.existsByAccountNumber(user.getAccountNumber())) {
+            throw new UserException.UserAlreadyExistsException("Account number already exists");
+        }
         return userRepo.save(user);
     }
 
@@ -62,6 +67,12 @@ public class UserService {
                     fullUser.getUsername(),
                     fullUser.getEmail(),
                     fullUser.getFullName(),
+                    fullUser.getBalance(),
+                    fullUser.getAccountType(),
+                    fullUser.getUserRole(),
+                    fullUser.getAccountNumber(),
+                    fullUser.getPhoneNumber(),
+                    fullUser.isActive(),
                     accessToken
             );
         } else {
@@ -77,10 +88,16 @@ public class UserService {
             user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         }
 
+        if (user.getTransactionPin() != null) {
+            // hash the transaction pin if it exists
+            user.setTransactionPin(bCryptPasswordEncoder.encode(user.getTransactionPin()));
+        }
+
         return userRepo.findById(id).map(
                 existingUser -> {
                     Optional.ofNullable(user.getUsername()).ifPresent(existingUser::setUsername);
                     Optional.ofNullable(user.getPassword()).ifPresent(existingUser::setPassword);
+                    Optional.ofNullable(user.getTransactionPin()).ifPresent(existingUser::setTransactionPin);
                     Optional.ofNullable(user.getEmail()).ifPresent(existingUser::setEmail);
                     Optional.ofNullable(user.getPhoneNumber()).ifPresent(existingUser::setPhoneNumber);
                     Optional.ofNullable(user.getFullName()).ifPresent(existingUser::setFullName);
@@ -98,9 +115,6 @@ public class UserService {
                     Optional.of(user.isTwoFactorAuthEnabled()).ifPresent(existingUser::setTwoFactorAuthEnabled);
                     Optional.of(user.getFailedLoginAttempts()).ifPresent(existingUser::setFailedLoginAttempts);
                     Optional.ofNullable(user.getAccountLockedUntil()).ifPresent(existingUser::setAccountLockedUntil);
-                    Optional.ofNullable(user.getCurrencyPreference()).ifPresent(existingUser::setCurrencyPreference);
-
-
 
                     return userRepo.save(existingUser);
                 }

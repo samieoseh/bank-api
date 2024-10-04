@@ -1,8 +1,8 @@
 package com.samuel.bankapi.controllers;
 
 import com.samuel.bankapi.UserException;
-import com.samuel.bankapi.models.LoginDto;
-import com.samuel.bankapi.models.User;
+import com.samuel.bankapi.models.dto.LoginDto;
+import com.samuel.bankapi.models.entities.User;
 import com.samuel.bankapi.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,18 +26,21 @@ public class UserCtrl {
 
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
+
+        System.out.println("user: " + user);
         return userService.registerUser(user);
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User user) {
         try {
+            System.out.println("user: " + user);
             LoginDto loggedInUser = userService.loginUser(user);
             return new ResponseEntity<>(loggedInUser, HttpStatus.OK);
         } catch (BadCredentialsException e) {
             return new ResponseEntity<>(
                     "Invalid username or password",
-                    HttpStatus.UNAUTHORIZED
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -83,6 +86,8 @@ public class UserCtrl {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 }
 
 

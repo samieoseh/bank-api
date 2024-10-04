@@ -1,4 +1,4 @@
-package com.samuel.bankapi.models;
+package com.samuel.bankapi.models.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,6 +22,9 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private String transactionPin;
 
     @Column(nullable = false)
     private String email;
@@ -73,9 +76,5 @@ public class User {
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date accountLockedUntil;
-
-    @Column(nullable = false)
-    private String currencyPreference;
-
 
 }

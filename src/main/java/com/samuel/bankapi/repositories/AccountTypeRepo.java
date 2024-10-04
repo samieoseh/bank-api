@@ -1,6 +1,6 @@
 package com.samuel.bankapi.repositories;
 
-import com.samuel.bankapi.models.AccountType;
+import com.samuel.bankapi.models.entities.AccountType;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

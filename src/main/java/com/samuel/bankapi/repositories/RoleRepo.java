@@ -1,6 +1,6 @@
 package com.samuel.bankapi.repositories;
 
-import com.samuel.bankapi.models.Role;
+import com.samuel.bankapi.models.entities.Role;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

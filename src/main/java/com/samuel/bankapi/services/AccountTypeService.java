@@ -1,6 +1,6 @@
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.models.AccountType;
+import com.samuel.bankapi.models.entities.AccountType;
 import com.samuel.bankapi.repositories.AccountTypeRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

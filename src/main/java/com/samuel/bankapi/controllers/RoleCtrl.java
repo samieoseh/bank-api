@@ -1,6 +1,6 @@
 package com.samuel.bankapi.controllers;
 
-import com.samuel.bankapi.models.Role;
+import com.samuel.bankapi.models.entities.Role;
 import com.samuel.bankapi.services.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
