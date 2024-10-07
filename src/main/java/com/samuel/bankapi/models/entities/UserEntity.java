@@ -12,7 +12,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Entity
 @Table(name = "users")
-public class User {
+public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -29,7 +29,7 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String phoneNumber;
 
     @Column(nullable = false)
@@ -45,11 +45,11 @@ public class User {
 
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "account_type_id", nullable = false)
-    private AccountType accountType;
+    private AccountTypeEntity accountType;
 
     @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "user_role_id", nullable = false)
-    private Role userRole;
+    private RoleEntity userRole;
 
     @Column(nullable = false)
     private boolean active;

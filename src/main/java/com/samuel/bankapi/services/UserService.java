@@ -1,8 +1,11 @@
 package com.samuel.bankapi.services;
 
 import com.samuel.bankapi.UserException;
+import com.samuel.bankapi.mappers.Mapper;
 import com.samuel.bankapi.models.dto.LoginDto;
-import com.samuel.bankapi.models.entities.User;
+import com.samuel.bankapi.models.dto.LoginResponseDto;
+import com.samuel.bankapi.models.dto.UserDto;
+import com.samuel.bankapi.models.entities.UserEntity;
 import com.samuel.bankapi.models.UserPrincipal;
 import com.samuel.bankapi.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,94 +34,83 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    public List<User> getUsers() {
+    public List<UserEntity> getUsers() {
         return StreamSupport.stream(userRepo.findAll().spliterator(), false).toList();
     }
 
-    public User registerUser(User user) {
-        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        user.setTransactionPin(bCryptPasswordEncoder.encode(user.getTransactionPin()));// hash password
+    public UserEntity registerUser(UserEntity userEntity) {
+        userEntity.setPassword(bCryptPasswordEncoder.encode(userEntity.getPassword()));
+        userEntity.setTransactionPin(bCryptPasswordEncoder.encode(userEntity.getTransactionPin()));// hash password
 
-        // check if user.accountNumber is unique
-        if (userRepo.existsByAccountNumber(user.getAccountNumber())) {
+        // check if userEntity.accountNumber is unique
+        if (userRepo.existsByAccountNumber(userEntity.getAccountNumber())) {
             throw new UserException.UserAlreadyExistsException("Account number already exists");
         }
-        return userRepo.save(user);
+        return userRepo.save(userEntity);
     }
 
 
-    public LoginDto loginUser(User user) throws Exception {
-        // Authenticate the user
+    public LoginResponseDto loginUser(LoginDto loginDto, Mapper<UserEntity, UserDto> userMapper) throws Exception {
+        // Authenticate the userEntity
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
         );
 
         // If authentication is successful
         if (authentication.isAuthenticated()) {
             UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-            User fullUser = userRepo.findByUsername(principal.getUsername());
+            UserEntity fullUserEntity = userRepo.findByUsername(principal.getUsername());
 
             // Generate JWT access token
-            String accessToken = jwtService.generateToken(user.getUsername());
+            String accessToken = jwtService.generateToken(loginDto.getUsername());
 
-            // Build and return LoginDto with user details and access token
-            return new LoginDto(
-                    fullUser.getId(),
-                    fullUser.getUsername(),
-                    fullUser.getEmail(),
-                    fullUser.getFullName(),
-                    fullUser.getBalance(),
-                    fullUser.getAccountType(),
-                    fullUser.getUserRole(),
-                    fullUser.getAccountNumber(),
-                    fullUser.getPhoneNumber(),
-                    fullUser.isActive(),
-                    accessToken
-            );
+            UserDto userDto = userMapper.mapTo(fullUserEntity);
+            return new LoginResponseDto(userDto, accessToken);
+
         } else {
             throw new BadCredentialsException("Invalid credentials");
         }
     }
 
-    public User updateUser(String id, User user) {
-        user.setId(id);
+    public UserEntity updateUser(String id, UserEntity userEntity) {
+        userEntity.setId(id);
 
-        if  (user.getPassword() != null) {
+        if  (userEntity.getPassword() != null) {
             // hash the password if it exists
-            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+            userEntity.setPassword(bCryptPasswordEncoder.encode(userEntity.getPassword()));
         }
 
-        if (user.getTransactionPin() != null) {
+        if (userEntity.getTransactionPin() != null) {
             // hash the transaction pin if it exists
-            user.setTransactionPin(bCryptPasswordEncoder.encode(user.getTransactionPin()));
+            userEntity.setTransactionPin(bCryptPasswordEncoder.encode(userEntity.getTransactionPin()));
         }
 
         return userRepo.findById(id).map(
                 existingUser -> {
-                    Optional.ofNullable(user.getUsername()).ifPresent(existingUser::setUsername);
-                    Optional.ofNullable(user.getPassword()).ifPresent(existingUser::setPassword);
-                    Optional.ofNullable(user.getTransactionPin()).ifPresent(existingUser::setTransactionPin);
-                    Optional.ofNullable(user.getEmail()).ifPresent(existingUser::setEmail);
-                    Optional.ofNullable(user.getPhoneNumber()).ifPresent(existingUser::setPhoneNumber);
-                    Optional.ofNullable(user.getFullName()).ifPresent(existingUser::setFullName);
-                    Optional.ofNullable(user.getAddress()).ifPresent(existingUser::setAddress);
-                    Optional.ofNullable(user.getAccountNumber()).ifPresent(existingUser::setAccountNumber);
-                    Optional.ofNullable(user.getBalance()).ifPresent(existingUser::setBalance);
-                    Optional.ofNullable(user.getAccountType()).ifPresent(existingUser::setAccountType);
-                    Optional.ofNullable(user.getUserRole()).ifPresent(existingUser::setUserRole);
-                    Optional.of(user.isActive()).ifPresent(existingUser::setActive);
-                    Optional.ofNullable(user.getLastLoginAt()).ifPresent(existingUser::setLastLoginAt);
-                    Optional.ofNullable(user.getCreatedAt()).ifPresent(existingUser::setCreatedAt);
-                    Optional.ofNullable(user.getProfilePictureUrl()).ifPresent(existingUser::setProfilePictureUrl);
-                    Optional.of(user.isEmailVerified()).ifPresent(existingUser::setEmailVerified);
-                    Optional.of(user.isPhoneNumberVerified()).ifPresent(existingUser::setPhoneNumberVerified);
-                    Optional.of(user.isTwoFactorAuthEnabled()).ifPresent(existingUser::setTwoFactorAuthEnabled);
-                    Optional.of(user.getFailedLoginAttempts()).ifPresent(existingUser::setFailedLoginAttempts);
-                    Optional.ofNullable(user.getAccountLockedUntil()).ifPresent(existingUser::setAccountLockedUntil);
+                    Optional.ofNullable(userEntity.getUsername()).ifPresent(existingUser::setUsername);
+                    Optional.ofNullable(userEntity.getPassword()).ifPresent(existingUser::setPassword);
+                    Optional.ofNullable(userEntity.getTransactionPin()).ifPresent(existingUser::setTransactionPin);
+                    Optional.ofNullable(userEntity.getEmail()).ifPresent(existingUser::setEmail);
+                    Optional.ofNullable(userEntity.getPhoneNumber()).ifPresent(existingUser::setPhoneNumber);
+                    Optional.ofNullable(userEntity.getFullName()).ifPresent(existingUser::setFullName);
+                    Optional.ofNullable(userEntity.getAddress()).ifPresent(existingUser::setAddress);
+                    Optional.ofNullable(userEntity.getAccountNumber()).ifPresent(existingUser::setAccountNumber);
+                    Optional.ofNullable(userEntity.getBalance()).ifPresent(existingUser::setBalance);
+                    Optional.ofNullable(userEntity.getAccountType()).ifPresent(existingUser::setAccountType);
+                    Optional.ofNullable(userEntity.getUserRole()).ifPresent(existingUser::setUserRole);
+                    Optional.of(userEntity.isActive()).ifPresent(existingUser::setActive);
+                    Optional.ofNullable(userEntity.getLastLoginAt()).ifPresent(existingUser::setLastLoginAt);
+                    Optional.ofNullable(userEntity.getCreatedAt()).ifPresent(existingUser::setCreatedAt);
+                    Optional.ofNullable(userEntity.getProfilePictureUrl()).ifPresent(existingUser::setProfilePictureUrl);
+                    Optional.of(userEntity.isEmailVerified()).ifPresent(existingUser::setEmailVerified);
+                    Optional.of(userEntity.isPhoneNumberVerified()).ifPresent(existingUser::setPhoneNumberVerified);
+                    Optional.of(userEntity.isTwoFactorAuthEnabled()).ifPresent(existingUser::setTwoFactorAuthEnabled);
+                    Optional.of(userEntity.getFailedLoginAttempts()).ifPresent(existingUser::setFailedLoginAttempts);
+                    Optional.ofNullable(userEntity.getAccountLockedUntil()).ifPresent(existingUser::setAccountLockedUntil);
 
                     return userRepo.save(existingUser);
                 }
-        ).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+        ).orElseThrow(() -> new UserException.UserNotFoundException("UserEntity not found"));
     }
 
     public void deleteUser(String id) {
@@ -127,5 +119,17 @@ public class UserService {
 
     public boolean isExists(String id) {
         return userRepo.existsById(id);
+    }
+
+    public boolean isUsernameValid(String username) {
+        return !userRepo.existsByUsername(username);
+    }
+
+    public boolean isEmailValid(String email) {
+        return !userRepo.existsByEmail(email);
+    }
+
+    public boolean isPhoneNumberValid(String phoneNumber) {
+        return !userRepo.existsByPhoneNumber(phoneNumber);
     }
 }

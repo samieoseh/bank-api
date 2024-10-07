@@ -1,6 +1,8 @@
 package com.samuel.bankapi.controllers;
 
-import com.samuel.bankapi.models.entities.AccountType;
+import com.samuel.bankapi.mappers.Mapper;
+import com.samuel.bankapi.models.dto.AccountTypeDto;
+import com.samuel.bankapi.models.entities.AccountTypeEntity;
 import com.samuel.bankapi.services.AccountTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,25 +14,37 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/account-types")
 public class AccountTypeCtrl {
-    @Autowired
-    AccountTypeService accountTypeService;
 
+    private final AccountTypeService accountTypeService;
+    private final Mapper<AccountTypeEntity, AccountTypeDto> accountTypeDtoMapper;
+
+    public AccountTypeCtrl(AccountTypeService accountTypeService, Mapper<AccountTypeEntity, AccountTypeDto> accountTypeDtoMapper) {
+        this.accountTypeService = accountTypeService;
+        this.accountTypeDtoMapper = accountTypeDtoMapper;
+    }
     @GetMapping("")
-    public ResponseEntity<List<AccountType>> getAccountTypes() {
-        List<AccountType> accountTypes = accountTypeService.getAccountTypes();
-        return new ResponseEntity<>(accountTypes, HttpStatus.OK);
+    public ResponseEntity<List<AccountTypeDto>> getAccountTypes() {
+        List<AccountTypeEntity> accountTypeEntities = accountTypeService.getAccountTypes();
+        List<AccountTypeDto> accountTypeDtos = accountTypeEntities.stream().map(accountTypeDtoMapper::mapTo).toList();
+
+        return new ResponseEntity<>(accountTypeDtos, HttpStatus.OK);
     }
 
     @PostMapping("")
-    public ResponseEntity<AccountType> createAccountType(@RequestBody AccountType accountType) {
-        return new ResponseEntity<>(accountTypeService.createAccountType(accountType), HttpStatus.CREATED);
+    public ResponseEntity<AccountTypeDto> createAccountType(@RequestBody AccountTypeDto accountTypeDto) {
+        AccountTypeEntity accountTypeEntity = accountTypeDtoMapper.mapFrom(accountTypeDto);
+        AccountTypeEntity createdAccountTypeEntity = accountTypeService.createAccountType(accountTypeEntity);
+        AccountTypeDto createdAccountTypeDto = accountTypeDtoMapper.mapTo(createdAccountTypeEntity);
+        return new ResponseEntity<>(createdAccountTypeDto, HttpStatus.CREATED);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<AccountType> updateAccountType(@PathVariable String id, @RequestBody AccountType accountType) {
+    public ResponseEntity<AccountTypeDto> updateAccountType(@PathVariable String id, @RequestBody AccountTypeDto accountTypeDto) {
             if(accountTypeService.isExists(id)) {
-                AccountType updatedAccountType = accountTypeService.updateAccountType(id, accountType);
-                return new ResponseEntity<>(updatedAccountType, HttpStatus.OK);
+                AccountTypeEntity accountTypeEntity = accountTypeDtoMapper.mapFrom(accountTypeDto);
+                AccountTypeEntity updatedAccountTypeEntity = accountTypeService.updateAccountType(id, accountTypeEntity);
+                AccountTypeDto updatedAccountTypeDto = accountTypeDtoMapper.mapTo(updatedAccountTypeEntity);
+                return new ResponseEntity<>(updatedAccountTypeDto, HttpStatus.OK);
             }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }

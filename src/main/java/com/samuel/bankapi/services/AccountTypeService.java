@@ -1,6 +1,6 @@
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.models.entities.AccountType;
+import com.samuel.bankapi.models.entities.AccountTypeEntity;
 import com.samuel.bankapi.repositories.AccountTypeRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,22 +15,22 @@ public class AccountTypeService {
     @Autowired
     AccountTypeRepo accountTypeRepo;
 
-    public List<AccountType> getAccountTypes() {
+    public List<AccountTypeEntity> getAccountTypes() {
         return StreamSupport.stream(accountTypeRepo.findAll().spliterator(), false).toList();
     }
 
-    public AccountType createAccountType(AccountType accountType) {
-        return accountTypeRepo.save(accountType);
+    public AccountTypeEntity createAccountType(AccountTypeEntity accountTypeEntity) {
+        return accountTypeRepo.save(accountTypeEntity);
     }
 
-    public AccountType updateAccountType(String id, AccountType accountType) {
-        accountType.setId(id);
+    public AccountTypeEntity updateAccountType(String id, AccountTypeEntity accountTypeEntity) {
+        accountTypeEntity.setId(id);
         return accountTypeRepo.findById(id).map(
                 existingAccountType -> {
-                    Optional.ofNullable(accountType.getTypeName()).ifPresent(existingAccountType::setTypeName);
-                    Optional.ofNullable(accountType.getDescription()).ifPresent(existingAccountType::setDescription);
-                    Optional.ofNullable(accountType.getInterestRate()).ifPresent(existingAccountType::setInterestRate);
-                    Optional.ofNullable(accountType.getMinimumBalance()).ifPresent(existingAccountType::setMinimumBalance);
+                    Optional.ofNullable(accountTypeEntity.getTypeName()).ifPresent(existingAccountType::setTypeName);
+                    Optional.ofNullable(accountTypeEntity.getDescription()).ifPresent(existingAccountType::setDescription);
+                    Optional.ofNullable(accountTypeEntity.getInterestRate()).ifPresent(existingAccountType::setInterestRate);
+                    Optional.ofNullable(accountTypeEntity.getMinimumBalance()).ifPresent(existingAccountType::setMinimumBalance);
                     return accountTypeRepo.save(existingAccountType);
                 }
         ).orElseThrow(() -> new RuntimeException("Account type not found"));

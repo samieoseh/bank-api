@@ -1,7 +1,7 @@
 
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.models.entities.User;
+import com.samuel.bankapi.models.entities.UserEntity;
 import com.samuel.bankapi.models.UserPrincipal;
 import com.samuel.bankapi.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +18,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepo.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
+        UserEntity userEntity = userRepo.findByUsername(username);
+        if (userEntity == null) {
+            throw new UsernameNotFoundException("UserEntity not found");
         }
-        return new UserPrincipal(user);
+        return new UserPrincipal(userEntity);
     }
 }

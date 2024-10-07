@@ -9,19 +9,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "roles")
-public class Role {
+@Table(name = "account_types")
+public class AccountTypeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @Column(nullable = false)
-    private String roleName;
-
-    @Column(nullable = false)
+    private String typeName; // e.g Checking, Savings, Loan etc
+    
     private String description;
 
     @Column(nullable = false)
-    private boolean active;
+    private Double interestRate;
 
+    @Column(nullable = false)
+    private Double minimumBalance;
 }

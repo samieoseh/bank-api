@@ -1,42 +1,98 @@
 package com.samuel.bankapi.controllers;
 
 import com.samuel.bankapi.UserException;
+import com.samuel.bankapi.mappers.Mapper;
+import com.samuel.bankapi.mappers.impl.UserMapperImpl;
 import com.samuel.bankapi.models.dto.LoginDto;
-import com.samuel.bankapi.models.entities.User;
+import com.samuel.bankapi.models.dto.LoginResponseDto;
+import com.samuel.bankapi.models.dto.UserDto;
+import com.samuel.bankapi.models.entities.UserEntity;
 import com.samuel.bankapi.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserCtrl {
-    @Autowired
     private UserService userService;
 
+    private final Mapper<UserEntity, UserDto> userMapper;
+
+    public UserCtrl(UserService userService, Mapper<UserEntity, UserDto> userMapper) {
+        this.userService = userService;
+        this.userMapper = userMapper;
+    }
+
     @GetMapping("")
-    public ResponseEntity<List<User>> getUsers() {
-        List<User> users = userService.getUsers();
-        return new ResponseEntity<>(users, HttpStatus.OK);
+    public ResponseEntity<List<UserDto>> getUsers() {
+        List<UserEntity> userEntities = userService.getUsers();
+        List<UserDto> userDtos = userEntities.stream().map(userMapper::mapTo).collect(Collectors.toList());
+        return new ResponseEntity<>(userDtos, HttpStatus.OK);
     }
 
     @PostMapping("/register")
-    public User registerUser(@RequestBody User user) {
+    public UserEntity registerUser(@RequestBody UserEntity userEntity) {
+        System.out.println("User Entity: " + userEntity);
+        return userService.registerUser(userEntity);
+    }
 
-        System.out.println("user: " + user);
-        return userService.registerUser(user);
+    @GetMapping("/register/validate-username/{username}")
+    public ResponseEntity<?> validateUsername(@PathVariable String username) {
+        try {
+            boolean isUsernameValid = userService.isUsernameValid(username);
+
+            if (!isUsernameValid) {
+                return new ResponseEntity<>("Username already exists", HttpStatus.BAD_REQUEST);
+            }
+
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/register/validate-email/{email}")
+    public ResponseEntity<?> validateEmail(@PathVariable String email) {
+        try {
+            boolean isEmailValid = userService.isEmailValid(email);
+
+            if (!isEmailValid) {
+                return new ResponseEntity<>("Email already exists", HttpStatus.BAD_REQUEST);
+            }
+
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/register/validate-phone-number/{phoneNumber}")
+    public ResponseEntity<?> validatePhoneNumber(@PathVariable String phoneNumber) {
+        try {
+            boolean isPhoneNumberValid = userService.isPhoneNumberValid(phoneNumber);
+
+            if (!isPhoneNumberValid) {
+                return new ResponseEntity<>("Phone Number already exists", HttpStatus.BAD_REQUEST);
+            }
+
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         try {
-            System.out.println("user: " + user);
-            LoginDto loggedInUser = userService.loginUser(user);
-            return new ResponseEntity<>(loggedInUser, HttpStatus.OK);
+
+            LoginResponseDto loginResponseDto = userService.loginUser(loginDto, userMapper);
+
+            return new ResponseEntity<>(loginResponseDto, HttpStatus.OK);
         } catch (BadCredentialsException e) {
             return new ResponseEntity<>(
                     "Invalid username or password",
@@ -48,10 +104,11 @@ public class UserCtrl {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserEntity userEntity) {
         try {
-            User updatedUser = userService.updateUser(id, user);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+            UserEntity updatedUserEntity = userService.updateUser(id, userEntity);
+            UserDto updatedUserDto = userMapper.mapTo(updatedUserEntity);
+            return new ResponseEntity<>(updatedUserDto, HttpStatus.OK);
         }
         catch (UserException.UserNotFoundException e) {
             return new ResponseEntity<>(
@@ -70,10 +127,10 @@ public class UserCtrl {
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
             if (!userService.isExists(id)) {
-                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("UserEntity not found", HttpStatus.NOT_FOUND);
             }
             userService.deleteUser(id);
-            return new ResponseEntity<>("User deleted", HttpStatus.OK);
+            return new ResponseEntity<>("UserEntity deleted", HttpStatus.OK);
         }
         catch (UserException.UserNotFoundException e) {
             return new ResponseEntity<>(

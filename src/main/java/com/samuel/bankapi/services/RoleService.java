@@ -1,6 +1,6 @@
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.models.entities.Role;
+import com.samuel.bankapi.models.entities.RoleEntity;
 import com.samuel.bankapi.repositories.RoleRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,24 +14,24 @@ public class RoleService {
     @Autowired
     private RoleRepo roleRepo;
 
-    public List<Role> getRoles() {
+    public List<RoleEntity> getRoles() {
         return StreamSupport.stream(roleRepo.findAll().spliterator(), false).toList();
     }
 
-    public Role createRole(Role role) {
-        return roleRepo.save(role);
+    public RoleEntity createRole(RoleEntity roleEntity) {
+        return roleRepo.save(roleEntity);
     }
 
-    public Role updateRole(String id, Role role) {
-        role.setId(id);
+    public RoleEntity updateRole(String id, RoleEntity roleEntity) {
+        roleEntity.setId(id);
         return roleRepo.findById(id).map(
                 existingRole -> {
-                    Optional.ofNullable(role.getRoleName()).ifPresent(existingRole::setRoleName);
-                    Optional.ofNullable(role.getDescription()).ifPresent(existingRole::setDescription);
-                    Optional.of(role.isActive()).ifPresent(existingRole::setActive);
+                    Optional.ofNullable(roleEntity.getRoleName()).ifPresent(existingRole::setRoleName);
+                    Optional.ofNullable(roleEntity.getDescription()).ifPresent(existingRole::setDescription);
+                    Optional.of(roleEntity.isActive()).ifPresent(existingRole::setActive);
                     return roleRepo.save(existingRole);
                 }
-        ).orElseThrow(() -> new RuntimeException("Role not found"));
+        ).orElseThrow(() -> new RuntimeException("RoleEntity not found"));
     }
 
     public void deleteRole(String id) {
