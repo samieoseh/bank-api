@@ -112,150 +112,119 @@ public class TransactionService {
         return balances;
     }
 
+    private String toJson(Object... keyValues) throws JsonProcessingException {
+        Map<String, Object> map = new HashMap<>();
+        for (int i = 0; i < keyValues.length; i += 2) {
+            if (!(keyValues[i] instanceof String key)) {
+                throw new IllegalArgumentException("Keys must be of type String.");
+            }
+            Object value = keyValues[i + 1];
+            map.put(key, value);
+        }
+
+        return objectMapper.writeValueAsString(map);
+    }
+
     public TransactionEntity createTransaction(TransactionEntity transactionEntity) throws JsonProcessingException {
-        // transaction initiation
+        // Initialize transaction
+        initializeTransaction(transactionEntity);
+
+
+        // Log audit for transaction initiation
+        logTransactionAudit(transactionEntity, null, objectMapper.writeValueAsString(transactionEntity), ActionType.CREATE);
+
+        // Validate transaction input
+        validateTransactionInputAndLogAudit(transactionEntity);
+
+        // Authenticate transaction
+        authenticateTransactionAndLogAudit(transactionEntity);
+
+        // Pre-process transaction
+        preProcessTransactionAndLogAudit(transactionEntity);
+
+        // Process transaction
+        processTransactionAndLogAudit(transactionEntity);
+
+        return transactionEntity;
+    }
+
+    private void initializeTransaction(TransactionEntity transactionEntity) {
         transactionEntity.setTransactionDate(new Date());
         transactionEntity.setStatus(StatusType.PENDING);
+        transactionRepo.save(transactionEntity);
+        transactionEntity.setStatus(StatusType.INITIATED);
+    }
 
-        TransactionEntity createdTransactionEntity = transactionRepo.save(transactionEntity);
-
-        // log the audit for transaction initiation
-        createdTransactionEntity.setStatus(StatusType.INITIATED);
-
+    private void logTransactionAudit(TransactionEntity transactionEntity, String oldData, String newData, ActionType action) throws JsonProcessingException {
         TransactionAuditEntity transactionAuditEntity = TransactionAuditEntity.builder()
-                .transaction(createdTransactionEntity)
-                .oldData(null)
-                .newData(objectMapper.writeValueAsString(createdTransactionEntity))
-                .action(ActionType.CREATE)
+                .transaction(transactionEntity)
+                .oldData(oldData)
+                .newData(newData)
+                .action(action)
                 .performedAt(new Date())
-                .performedBy(createdTransactionEntity.getSender())
+                .performedBy(transactionEntity.getSender())
                 .build();
-
         transactionAuditService.createTransactionAudit(transactionAuditEntity);
+    }
 
-        // starting validating
-        // log audit old Data {status: INITIATED} to new Data {status: VALIDATING}
-        TransactionAuditEntity transactionAuditValidateInputEntity = TransactionAuditEntity.builder()
-                .transaction(createdTransactionEntity)
-                .oldData(objectMapper.writeValueAsString(objectMapper.writeValueAsString(createdTransactionEntity)))
-                .newData(objectMapper.writeValueAsString(Map.of("status", "VALIDATING")))
-                .action(ActionType.VALIDATE)
-                .performedBy(createdTransactionEntity.getSender())
-                .performedAt(new Date())
-                .build();
-
-        transactionAuditService.createTransactionAudit(transactionAuditValidateInputEntity);
-
-        // validate incoming transactions input
-        boolean isTransactionInputValid = validateTransactionInput(createdTransactionEntity);
-
-        if (isTransactionInputValid) {
-            // log audit old Data {status: VALIDATING} to new Data {status: VALIDATED}
-            TransactionAuditEntity transactionAuditValidateInputEntity2 = TransactionAuditEntity.builder()
-                    .transaction(createdTransactionEntity)
-                    .oldData(objectMapper.writeValueAsString(Map.of("status", "VALIDATING")))
-                    .newData(objectMapper.writeValueAsString(Map.of("status", "VALIDATED")))
-                    .action(ActionType.VALIDATE)
-                    .performedBy(createdTransactionEntity.getSender())
-                    .performedAt(new Date())
-                    .build();
-            transactionAuditService.createTransactionAudit(transactionAuditValidateInputEntity2);
+    private void validateTransactionInputAndLogAudit(TransactionEntity transactionEntity) throws JsonProcessingException {
+        logTransactionAudit(transactionEntity,
+                objectMapper.writeValueAsString(Map.of("status", "INITIATED")),
+                objectMapper.writeValueAsString(Map.of("status", "VALIDATING")),
+                ActionType.VALIDATE);
+        if (validateTransactionInput(transactionEntity)) {
+            logTransactionAudit(transactionEntity,
+                    objectMapper.writeValueAsString(Map.of("status", "VALIDATING")),
+                    objectMapper.writeValueAsString(Map.of("status", "VALIDATED")),
+                    ActionType.VALIDATE);
         }
+    }
 
-        // starting authentication
-        // log audit old Data {status: VALIDATED} to new Data {status: AUTHENTICATING}
-        TransactionAuditEntity transactionAuditAuthenticateEntity = TransactionAuditEntity.builder()
-                .transaction(createdTransactionEntity)
-                .oldData(objectMapper.writeValueAsString(Map.of("status", "VALIDATED")))
-                .newData(objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATING")))
-                .action(ActionType.AUTHENTICATE)
-                .performedBy(createdTransactionEntity.getSender())
-                .performedAt(new Date())
-                .build();
-
-        transactionAuditService.createTransactionAudit(transactionAuditAuthenticateEntity);
-
-         // authenticate transaction
-        boolean isTransactionAuthenticated = validateTransactionPin(createdTransactionEntity.getTransactionPin());
-
-       if (isTransactionAuthenticated) {
-            // log audit old Data {status: AUTHENTICATING} to new Data {status: AUTHENTICATED}
-            TransactionAuditEntity transactionAuditAuthenticateEntity2 = TransactionAuditEntity.builder()
-                    .transaction(createdTransactionEntity)
-                    .oldData(objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATING")))
-                    .newData(objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATED")))
-                    .action(ActionType.AUTHENTICATE)
-                    .performedBy(createdTransactionEntity.getSender())
-                    .performedAt(new Date())
-                    .build();
-            transactionAuditService.createTransactionAudit(transactionAuditAuthenticateEntity2);
+    private void authenticateTransactionAndLogAudit(TransactionEntity transactionEntity) throws JsonProcessingException {
+        logTransactionAudit(transactionEntity,
+                objectMapper.writeValueAsString(Map.of("status", "VALIDATED")),
+                objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATING")),
+                ActionType.AUTHENTICATE);
+        if (validateTransactionPin(transactionEntity.getTransactionPin())) {
+            logTransactionAudit(transactionEntity,
+                    objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATING")),
+                    objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATED")),
+                    ActionType.AUTHENTICATE);
         }
+    }
 
-       //  pre-processing
-        // log audit old Data {status: AUTHENTICATED} to new Data {status: PRE-PROCESSING}
-        TransactionAuditEntity transactionAuditPreProcessEntity = TransactionAuditEntity.builder()
-                .transaction(createdTransactionEntity)
-                .oldData(objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATED")))
-                .newData(objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSING")))
-                .action(ActionType.PRE_PROCESS)
-                .performedBy(createdTransactionEntity.getSender())
-                .performedAt(new Date())
-                .build();
-
-        transactionAuditService.createTransactionAudit(transactionAuditPreProcessEntity);
-
-        // check if both account are active
-        // check if sender has enough balance
-        boolean isTransactionReadyForProcessing = isBalanceSufficient(createdTransactionEntity.getAmount()) && usersActive(
-                createdTransactionEntity
+    private void preProcessTransactionAndLogAudit(TransactionEntity transactionEntity) throws JsonProcessingException {
+        boolean isTransactionReadyForProcessing = isBalanceSufficient(transactionEntity.getAmount()) && usersActive(
+                transactionEntity
         );
-
+        logTransactionAudit(transactionEntity,
+                objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATED")),
+                objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSING")),
+                ActionType.PRE_PROCESS);
         if (isTransactionReadyForProcessing) {
-            // log audit old Data {status: PRE-PROCESSING} to new Data {status: PROCESSING}
-            TransactionAuditEntity transactionAuditPreProcessEntity2 = TransactionAuditEntity.builder()
-                    .transaction(createdTransactionEntity)
-                    .oldData(objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSING")))
-                    .newData(objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSED")))
-                    .action(ActionType.PRE_PROCESS)
-                    .performedBy(createdTransactionEntity.getSender())
-                    .performedAt(new Date())
-                    .build();
-            transactionAuditService.createTransactionAudit(transactionAuditPreProcessEntity2);
+            logTransactionAudit(transactionEntity,
+                    objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSING")),
+                    objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSED")),
+                    ActionType.PRE_PROCESS);
         }
+    }
 
-        // processing
-        // log audit old Data {status: PROCESSING} to new Data {status: PROCESSED}
-        TransactionAuditEntity transactionAuditProcessEntity = TransactionAuditEntity.builder()
-                .transaction(createdTransactionEntity)
-                .oldData(objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSED")))
-                .newData(objectMapper.writeValueAsString(Map.of("status", "PROCESSING")))
-                .action(ActionType.PROCESS)
-                .performedBy(createdTransactionEntity.getSender())
-                .performedAt(new Date())
-                .build();
-
-        transactionAuditService.createTransactionAudit(transactionAuditProcessEntity);
-
-        // update the sender and receiver balance
-        // should be transactional and atomic
+    private void processTransactionAndLogAudit(TransactionEntity transactionEntity) throws JsonProcessingException {
+        logTransactionAudit(transactionEntity,
+                objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSED")),
+                objectMapper.writeValueAsString(Map.of("status", "PROCESSING")),
+                ActionType.PROCESS);
         try {
-            Map<String, Double> balances = processTransaction(createdTransactionEntity);
-            TransactionAuditEntity transactionAuditProcessEntity2 = TransactionAuditEntity.builder()
-                    .transaction(createdTransactionEntity)
-                    .oldData(objectMapper.writeValueAsString(Map.of("status", "PROCESSING")))
-                    .newData(objectMapper.writeValueAsString(Map.of("status", "PROCESSED", "senderBalance", balances.get("senderBalance"), "receiverBalance", balances.get("receiverBalance"))))
-                    .action(ActionType.PROCESS)
-                    .performedBy(createdTransactionEntity.getSender())
-                    .performedAt(new Date())
-                    .build();
-
-            transactionAuditService.createTransactionAudit(transactionAuditProcessEntity2);
-
+            Map<String, Double> balances = processTransaction(transactionEntity);
+            logTransactionAudit(transactionEntity,
+                    objectMapper.writeValueAsString(Map.of("status", "PROCESSING")),
+                    objectMapper.writeValueAsString(Map.of("status", "PROCESSED", "senderBalance", balances.get("senderBalance"), "receiverBalance", balances.get("receiverBalance"))),
+                    ActionType.PROCESS);
         } catch (Exception e) {
             throw new TransactionException.BadTransaction("An error occurred during transaction");
         }
-
-
-        return createdTransactionEntity;
     }
+
+
+
 }
