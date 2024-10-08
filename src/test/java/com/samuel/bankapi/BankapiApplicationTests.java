@@ -9,6 +9,4 @@ class BankapiApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
-
 }

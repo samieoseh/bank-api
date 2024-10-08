@@ -1,14 +1,12 @@
 package com.samuel.bankapi.controllers;
 
-import com.samuel.bankapi.UserException;
+import com.samuel.bankapi.exceptions.UserException;
 import com.samuel.bankapi.mappers.Mapper;
-import com.samuel.bankapi.mappers.impl.UserMapperImpl;
 import com.samuel.bankapi.models.dto.LoginDto;
 import com.samuel.bankapi.models.dto.LoginResponseDto;
 import com.samuel.bankapi.models.dto.UserDto;
 import com.samuel.bankapi.models.entities.UserEntity;
 import com.samuel.bankapi.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -36,9 +34,9 @@ public class UserCtrl {
     }
 
     @PostMapping("/register")
-    public UserEntity registerUser(@RequestBody UserEntity userEntity) {
-        System.out.println("User Entity: " + userEntity);
-        return userService.registerUser(userEntity);
+    public ResponseEntity<UserEntity> registerUser(@RequestBody UserEntity userEntity) {
+        System.out.println("UserEntity: " + userEntity);
+        return new ResponseEntity<>(userService.registerUser(userEntity), HttpStatus.CREATED);
     }
 
     @GetMapping("/register/validate-username/{username}")
@@ -89,14 +87,13 @@ public class UserCtrl {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         try {
-
             LoginResponseDto loginResponseDto = userService.loginUser(loginDto, userMapper);
-
             return new ResponseEntity<>(loginResponseDto, HttpStatus.OK);
         } catch (BadCredentialsException e) {
+            System.out.println("Bad exception");
             return new ResponseEntity<>(
                     "Invalid username or password",
-                    HttpStatus.INTERNAL_SERVER_ERROR
+                    HttpStatus.BAD_REQUEST
             );
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -130,7 +127,7 @@ public class UserCtrl {
                 return new ResponseEntity<>("UserEntity not found", HttpStatus.NOT_FOUND);
             }
             userService.deleteUser(id);
-            return new ResponseEntity<>("UserEntity deleted", HttpStatus.OK);
+            return new ResponseEntity<>("UserEntity deleted", HttpStatus.NO_CONTENT);
         }
         catch (UserException.UserNotFoundException e) {
             return new ResponseEntity<>(

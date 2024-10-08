@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
@@ -23,7 +24,7 @@ public class UserDto {
     private String address;
     private RoleEntity userRole;
     private AccountTypeEntity accountType;
-    private Double balance;
+    private BigDecimal balance;
     private boolean active;
     private String profilePictureUrl;
     private boolean emailVerified;

@@ -1,6 +1,6 @@
 package com.samuel.bankapi.services;
 
-import com.samuel.bankapi.UserException;
+import com.samuel.bankapi.exceptions.UserException;
 import com.samuel.bankapi.mappers.Mapper;
 import com.samuel.bankapi.models.dto.LoginDto;
 import com.samuel.bankapi.models.dto.LoginResponseDto;
@@ -59,12 +59,12 @@ public class UserService {
         // If authentication is successful
         if (authentication.isAuthenticated()) {
             UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-            UserEntity fullUserEntity = userRepo.findByUsername(principal.getUsername());
+            Optional<UserEntity> fullUserEntity = userRepo.findByUsername(principal.getUsername());
 
             // Generate JWT access token
             String accessToken = jwtService.generateToken(loginDto.getUsername());
 
-            UserDto userDto = userMapper.mapTo(fullUserEntity);
+            UserDto userDto = userMapper.mapTo(fullUserEntity.get());
             return new LoginResponseDto(userDto, accessToken);
 
         } else {
@@ -131,5 +131,23 @@ public class UserService {
 
     public boolean isPhoneNumberValid(String phoneNumber) {
         return !userRepo.existsByPhoneNumber(phoneNumber);
+    }
+
+    public UserEntity getUser(String id) {
+        return userRepo.findById(id).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+    }
+
+    public double decreaseBalance(String id, double amount) {
+        UserEntity userEntity = userRepo.findById(id).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+        userEntity.setBalance(userEntity.getBalance() - amount);
+        userRepo.save(userEntity);
+        return userEntity.getBalance();
+    }
+
+    public double increaseBalance(String id, double amount) {
+        UserEntity userEntity = userRepo.findById(id).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+        userEntity.setBalance(userEntity.getBalance() + amount);
+        userRepo.save(userEntity);
+        return userEntity.getBalance();
     }
 }
