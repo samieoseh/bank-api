@@ -35,31 +35,4 @@ public class TransactionEntityIntegrationTests {
         this.accountTypeRepo = accountTypeRepo;
     }
 
-//    @Test
-//    public void testThatTransactionCanBeCreatedAndRecalled() {
-//        RoleEntity roleEntity = roleRepo.save(TestDataUtil.createRoleEntity("User"));
-//        AccountTypeEntity accountTypeEntity = accountTypeRepo.save(TestDataUtil.createAccountTypeEntity("Savings"));
-//
-//        // create two users
-//        UserEntity userEntity1 = TestDataUtil.createUserEntity("testuser1", "08012345678", "testuser1@gmail.com");
-//        userEntity1.setUserRole(roleEntity);
-//        userEntity1.setAccountType(accountTypeEntity);
-//        userRepo.save(userEntity1);
-//
-//        UserEntity userEntity2 = TestDataUtil.createUserEntity("testuser2", "08012345679", "testuser2@gmail.com");
-//        userEntity2.setUserRole(roleEntity);
-//        userEntity2.setAccountType(accountTypeEntity);
-//        userRepo.save(userEntity2);
-//
-//        // create a transaction
-//        TransactionEntity transactionEntity = TransactionEntity.builder()
-//                .sender(userEntity1)
-//                .reciever(userEntity2)
-//                .build();
-//
-//        TransactionEntity savedTransaction = undertest.save(transactionEntity);
-//
-//        Optional<TransactionEntity> result = undertest.findById(savedTransaction.getId());
-//        assertThat(result).isPresent();
-//    }
 }
