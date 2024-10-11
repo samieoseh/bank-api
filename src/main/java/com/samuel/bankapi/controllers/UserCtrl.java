@@ -10,6 +10,7 @@ import com.samuel.bankapi.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,11 +90,11 @@ public class UserCtrl {
         try {
             LoginResponseDto loginResponseDto = userService.loginUser(loginDto, userMapper);
             return new ResponseEntity<>(loginResponseDto, HttpStatus.OK);
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             System.out.println("Bad exception");
             return new ResponseEntity<>(
                     "Invalid username or password",
-                    HttpStatus.BAD_REQUEST
+                    HttpStatus.UNAUTHORIZED
             );
         } catch (Exception e) {
             throw new RuntimeException(e);

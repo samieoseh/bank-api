@@ -51,11 +51,13 @@ public class UserService {
 
 
     public LoginResponseDto loginUser(LoginDto loginDto, Mapper<UserEntity, UserDto> userMapper) throws Exception {
+        System.out.println("Trying to login");
         // Authenticate the userEntity
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
         );
 
+        System.out.println("in here");
         // If authentication is successful
         if (authentication.isAuthenticated()) {
             UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
@@ -67,9 +69,8 @@ public class UserService {
             UserDto userDto = userMapper.mapTo(fullUserEntity.get());
             return new LoginResponseDto(userDto, accessToken);
 
-        } else {
-            throw new BadCredentialsException("Invalid credentials");
         }
+        return null;
     }
 
     public UserEntity updateUser(String id, UserEntity userEntity) {
