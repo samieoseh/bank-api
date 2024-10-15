@@ -29,10 +29,10 @@ public class TransactionCtrl {
     @Autowired
     Mapper<UserEntity, VerifyUserDto> userMapper;
 
-    @GetMapping("/verify-and-get-user/{id}")
-    public ResponseEntity<VerifyUserDto> verifyAndGetUser(@PathVariable String id) {
-        if (userService.isExists(id)) {
-            UserEntity userEntity = userService.getUser(id);
+    @GetMapping("/verify-and-get-user/{accountNumber}")
+    public ResponseEntity<VerifyUserDto> verifyAndGetUser(@PathVariable String accountNumber) {
+        if (userService.isExists(accountNumber)) {
+            UserEntity userEntity = userService.getUser(accountNumber);
             VerifyUserDto verifyUserDto = userMapper.mapTo(userEntity);
             return new ResponseEntity<>(verifyUserDto, HttpStatus.OK);
         } else {

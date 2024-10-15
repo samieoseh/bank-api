@@ -5,6 +5,7 @@ import com.samuel.bankapi.filters.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -33,7 +34,8 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable) // disable CSRF
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/users/register/**", "/api/users/login", "api/roles", "api/account-types", "api/email/*").permitAll() // allow access to /register without authentication
+                        .requestMatchers("/api/users/register/**", "/api/users/login", "api/roles", "api/account-types", "api/email/*", "api/users/complete-registration/**").permitAll() // allow access to /register without authentication
+                        .requestMatchers(HttpMethod.OPTIONS).permitAll()
                         .anyRequest().authenticated() // secure all other requests
                 )
                 //.formLogin(Customizer.withDefaults()) // a form login for browsers

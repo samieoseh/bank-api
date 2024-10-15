@@ -19,16 +19,13 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
     private String transactionPin;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false, unique = true)
@@ -39,10 +36,8 @@ public class UserEntity {
 
     private String address;
 
-    @Column(nullable = false)
     private String accountNumber;
 
-    @Column(nullable = false)
     private Double balance;
 
     @ManyToOne(cascade = CascadeType.MERGE)
@@ -70,10 +65,6 @@ public class UserEntity {
     @Column(nullable = false)
     private boolean phoneNumberVerified;
 
-    @Column(nullable = false)
-    private boolean twoFactorAuthEnabled;
-
-    @Column(nullable = false)
     private int failedLoginAttempts;
 
     @Temporal(TemporalType.TIMESTAMP)

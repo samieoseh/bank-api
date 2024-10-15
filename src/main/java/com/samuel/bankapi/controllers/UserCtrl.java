@@ -36,7 +36,6 @@ public class UserCtrl {
 
     @PostMapping("/register")
     public ResponseEntity<UserEntity> registerUser(@RequestBody UserEntity userEntity) {
-        System.out.println("UserEntity: " + userEntity);
         return new ResponseEntity<>(userService.registerUser(userEntity), HttpStatus.CREATED);
     }
 
@@ -105,6 +104,26 @@ public class UserCtrl {
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserEntity userEntity) {
         try {
             UserEntity updatedUserEntity = userService.updateUser(id, userEntity);
+            UserDto updatedUserDto = userMapper.mapTo(updatedUserEntity);
+            return new ResponseEntity<>(updatedUserDto, HttpStatus.OK);
+        }
+        catch (UserException.UserNotFoundException e) {
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.NOT_FOUND);
+        }
+        catch (Exception e) {
+            return new ResponseEntity<>(
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PatchMapping("/complete-registration")
+    public ResponseEntity<?> completeRegistration(@RequestBody UserEntity userEntity) {
+        try {
+            System.out.println("user entity" + userEntity);
+            UserEntity updatedUserEntity = userService.completeRegistration(userEntity);
             UserDto updatedUserDto = userMapper.mapTo(updatedUserEntity);
             return new ResponseEntity<>(updatedUserDto, HttpStatus.OK);
         }

@@ -51,5 +51,4 @@ public class TransactionEntity {
     @Transient
     private String transactionPin;
 
-
 }

@@ -39,11 +39,16 @@ public class UserService {
     }
 
     public UserEntity registerUser(UserEntity userEntity) {
-        userEntity.setPassword(bCryptPasswordEncoder.encode(userEntity.getPassword()));
-        userEntity.setTransactionPin(bCryptPasswordEncoder.encode(userEntity.getTransactionPin()));// hash password
+        if (userEntity.getPassword() != null) {
+            userEntity.setPassword(bCryptPasswordEncoder.encode(userEntity.getPassword()));
+        }
+
+        if (userEntity.getTransactionPin() != null) {
+            userEntity.setTransactionPin(bCryptPasswordEncoder.encode(userEntity.getTransactionPin()));
+        }
 
         // check if userEntity.accountNumber is unique
-        if (userRepo.existsByAccountNumber(userEntity.getAccountNumber())) {
+        if (userEntity.getAccountNumber() != null && userRepo.existsByAccountNumber(userEntity.getAccountNumber())) {
             throw new UserException.UserAlreadyExistsException("Account number already exists");
         }
         return userRepo.save(userEntity);
@@ -51,13 +56,11 @@ public class UserService {
 
 
     public LoginResponseDto loginUser(LoginDto loginDto, Mapper<UserEntity, UserDto> userMapper) throws Exception {
-        System.out.println("Trying to login");
         // Authenticate the userEntity
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
         );
 
-        System.out.println("in here");
         // If authentication is successful
         if (authentication.isAuthenticated()) {
             UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
@@ -105,7 +108,6 @@ public class UserService {
                     Optional.ofNullable(userEntity.getProfilePictureUrl()).ifPresent(existingUser::setProfilePictureUrl);
                     Optional.of(userEntity.isEmailVerified()).ifPresent(existingUser::setEmailVerified);
                     Optional.of(userEntity.isPhoneNumberVerified()).ifPresent(existingUser::setPhoneNumberVerified);
-                    Optional.of(userEntity.isTwoFactorAuthEnabled()).ifPresent(existingUser::setTwoFactorAuthEnabled);
                     Optional.of(userEntity.getFailedLoginAttempts()).ifPresent(existingUser::setFailedLoginAttempts);
                     Optional.ofNullable(userEntity.getAccountLockedUntil()).ifPresent(existingUser::setAccountLockedUntil);
 
@@ -119,7 +121,7 @@ public class UserService {
     }
 
     public boolean isExists(String id) {
-        return userRepo.existsById(id);
+        return userRepo.existsById(id) || userRepo.existsByAccountNumber(id);
     }
 
     public boolean isUsernameValid(String username) {
@@ -134,8 +136,8 @@ public class UserService {
         return !userRepo.existsByPhoneNumber(phoneNumber);
     }
 
-    public UserEntity getUser(String id) {
-        return userRepo.findById(id).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+    public UserEntity getUser(String accountNumber) {
+        return userRepo.findByAccountNumber(accountNumber).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
     }
 
     public double decreaseBalance(String id, double amount) {
@@ -150,5 +152,26 @@ public class UserService {
         userEntity.setBalance(userEntity.getBalance() + amount);
         userRepo.save(userEntity);
         return userEntity.getBalance();
+    }
+
+    public UserEntity completeRegistration(UserEntity userEntity) {
+        if (userEntity.getPassword() != null) {
+            userEntity.setPassword(bCryptPasswordEncoder.encode(userEntity.getPassword()));
+        }
+
+        if (userEntity.getTransactionPin() != null) {
+            userEntity.setTransactionPin(bCryptPasswordEncoder.encode(userEntity.getTransactionPin()));
+        }
+
+
+        return userRepo.findByAccountNumber(userEntity.getAccountNumber()).map(
+                existingUser ->  {
+                    Optional.ofNullable(userEntity.getFullName()).ifPresent(existingUser::setFullName);
+                    Optional.ofNullable(userEntity.getUsername()).ifPresent(existingUser::setUsername);
+                    Optional.ofNullable(userEntity.getPassword()).ifPresent(existingUser::setPassword);
+                    Optional.ofNullable(userEntity.getTransactionPin()).ifPresent(existingUser::setTransactionPin);
+                    return userRepo.save(existingUser);
+                }
+        ).orElseThrow(() -> new UserException.UserNotFoundException("UserEntity not found"));
     }
 }

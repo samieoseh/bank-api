@@ -29,7 +29,6 @@ public class UserDto {
     private String profilePictureUrl;
     private boolean emailVerified;
     private boolean phoneNumberVerified;
-    private boolean twoFactorAuthEnabled;
     private Date accountLockedUntil;
     private Date createdAt;
     private Date lastLoginAt;
