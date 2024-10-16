@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 @Service
 public class TransactionService {
@@ -39,13 +41,7 @@ public class TransactionService {
     @Autowired
     private  UserService userService;
 
-    public boolean isBalanceSufficient(double amount) {
-        // get the current logged in user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-        UserEntity userEntity = userRepo.findByUsername(principal.getUsername())
-                .orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
-
+    public boolean isBalanceSufficient(UserEntity userEntity, double amount) {
         // check if the userEntity balance is greater than the amount
         return userEntity.getBalance() >= amount;
     }
@@ -61,33 +57,43 @@ public class TransactionService {
     private boolean validateTransactionInput(TransactionEntity transactionEntity) {
         // check if the sender and receiver are the same
         if (transactionEntity.getSender().getId().equals(transactionEntity.getReciever().getId())) {
+            transactionEntity.setStatus(StatusType.FAILED);
+            transactionRepo.save(transactionEntity);
             throw new TransactionException.InvalidTransactionException("Sender and receiver cannot be the same");
         }
 
         // check if the amount is greater than 0
-        if (transactionEntity.getAmount() <= 0) {
-            throw new TransactionException.InvalidTransactionException("Amount must be greater than 0");
+        if (transactionEntity.getAmount() <= 100) {
+            transactionEntity.setStatus(StatusType.FAILED);
+            transactionRepo.save(transactionEntity);
+            throw new TransactionException.InvalidTransactionException("Amount must be greater than 100");
         }
 
         // check if the sender has sufficient balance
-        if (!isBalanceSufficient(transactionEntity.getAmount())) {
+        if (!isBalanceSufficient(transactionEntity.getSender(), transactionEntity.getAmount())) {
+            transactionEntity.setStatus(StatusType.FAILED);
+            transactionRepo.save(transactionEntity);
             throw new TransactionException.InvalidTransactionException("Insufficient funds");
         }
         return true;
     }
 
-    private boolean validateTransactionPin(String transactionPin) {
+    private boolean validateTransactionPin(TransactionEntity transactionEntity) {
         // get the current logged in user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         UserEntity userEntity = userRepo.findByUsername(principal.getUsername())
                 .orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
 
-        // check if the transaction pin is correct
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        if (userEntity.getUserRole().getRoleName().equals("user")) {
+            // check if the transaction pin is correct
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-        if (!encoder.matches(transactionPin, userEntity.getTransactionPin())) {
-           throw new TransactionException.InvalidCredentials("Invalid transaction pin");
+            if (!encoder.matches(transactionEntity.getTransactionPin(), userEntity.getTransactionPin())) {
+                transactionEntity.setStatus(StatusType.FAILED);
+                transactionRepo.save(transactionEntity);
+                throw new TransactionException.InvalidCredentials("Invalid transaction pin");
+            }
         }
 
         return true;
@@ -149,6 +155,7 @@ public class TransactionService {
     }
 
     private void initializeTransaction(TransactionEntity transactionEntity) {
+        System.out.println("transactionEntity: " + transactionEntity);
         transactionEntity.setTransactionDate(new Date());
         transactionEntity.setStatus(StatusType.PENDING);
         transactionRepo.save(transactionEntity);
@@ -185,7 +192,7 @@ public class TransactionService {
                 objectMapper.writeValueAsString(Map.of("status", "VALIDATED")),
                 objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATING")),
                 ActionType.AUTHENTICATE);
-        if (validateTransactionPin(transactionEntity.getTransactionPin())) {
+        if (validateTransactionPin(transactionEntity)) {
             logTransactionAudit(transactionEntity,
                     objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATING")),
                     objectMapper.writeValueAsString(Map.of("status", "AUTHENTICATED")),
@@ -194,7 +201,7 @@ public class TransactionService {
     }
 
     private void preProcessTransactionAndLogAudit(TransactionEntity transactionEntity) throws JsonProcessingException {
-        boolean isTransactionReadyForProcessing = isBalanceSufficient(transactionEntity.getAmount()) && usersActive(
+        boolean isTransactionReadyForProcessing = isBalanceSufficient(transactionEntity.getSender(), transactionEntity.getAmount()) && usersActive(
                 transactionEntity
         );
         logTransactionAudit(transactionEntity,
@@ -206,6 +213,10 @@ public class TransactionService {
                     objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSING")),
                     objectMapper.writeValueAsString(Map.of("status", "PRE-PROCESSED")),
                     ActionType.PRE_PROCESS);
+        } else {
+            transactionEntity.setStatus(StatusType.FAILED);
+            transactionRepo.save(transactionEntity);
+            throw new TransactionException.InvalidTransactionException("Transaction not ready for processing");
         }
     }
 
@@ -221,10 +232,15 @@ public class TransactionService {
                     objectMapper.writeValueAsString(Map.of("status", "PROCESSED", "senderBalance", balances.get("senderBalance"), "receiverBalance", balances.get("receiverBalance"))),
                     ActionType.PROCESS);
         } catch (Exception e) {
+            transactionEntity.setStatus(StatusType.FAILED);
+            transactionRepo.save(transactionEntity);
             throw new TransactionException.BadTransaction("An error occurred during transaction");
+
         }
     }
 
 
-
+    public List<TransactionEntity> getTransactions() {
+        return StreamSupport.stream(transactionRepo.findAllByOrderByTransactionDateDesc().spliterator(), false).toList();
+    }
 }

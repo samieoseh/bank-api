@@ -2,6 +2,7 @@ package com.samuel.bankapi.controllers;
 
 import com.samuel.bankapi.mappers.Mapper;
 import com.samuel.bankapi.models.dto.TransactionDto;
+import com.samuel.bankapi.models.dto.TransactionReadDto;
 import com.samuel.bankapi.models.dto.UserDto;
 import com.samuel.bankapi.models.dto.VerifyUserDto;
 import com.samuel.bankapi.models.entities.TransactionEntity;
@@ -10,9 +11,12 @@ import com.samuel.bankapi.services.TransactionService;
 import com.samuel.bankapi.services.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -24,7 +28,12 @@ public class TransactionCtrl {
     UserService userService;
 
     @Autowired
+    @Qualifier("transactionMapper")
     Mapper<TransactionEntity, TransactionDto> transactionMapper;
+
+    @Autowired
+    @Qualifier("transactionReadMapper")
+    Mapper<TransactionEntity, TransactionReadDto> transactionReadMapper;
 
     @Autowired
     Mapper<UserEntity, VerifyUserDto> userMapper;
@@ -42,7 +51,8 @@ public class TransactionCtrl {
 
     @GetMapping("/verify-balance/{amount}")
     public ResponseEntity<?> verifyBalance(@PathVariable double amount) {
-        if (transactionService.isBalanceSufficient(amount)) {
+        UserEntity userEntity = userService.getCurrentUser();
+        if (transactionService.isBalanceSufficient(userEntity, amount)) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Insufficient Funds", HttpStatus.BAD_REQUEST);
@@ -60,5 +70,17 @@ public class TransactionCtrl {
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GetMapping("")
+    public ResponseEntity<?> getAllTransactions() {
+        try {
+            List<TransactionEntity> transactionEntities = transactionService.getTransactions();
+            List<TransactionReadDto> transactionDtos = transactionEntities.stream().map(transactionReadMapper::mapTo).toList();
+            return new ResponseEntity<>(transactionDtos, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
     }
 }

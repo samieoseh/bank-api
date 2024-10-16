@@ -8,7 +8,7 @@ import com.samuel.bankapi.services.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("transactionMapper")
 public class TransactionMapperImpl implements Mapper<TransactionEntity, TransactionDto> {
     private final ModelMapper modelMapper;
     private final UserService userService;

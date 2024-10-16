@@ -13,9 +13,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -51,6 +53,9 @@ public class UserService {
         if (userEntity.getAccountNumber() != null && userRepo.existsByAccountNumber(userEntity.getAccountNumber())) {
             throw new UserException.UserAlreadyExistsException("Account number already exists");
         }
+
+        userEntity.setCreatedAt(new Date());
+
         return userRepo.save(userEntity);
     }
 
@@ -70,6 +75,8 @@ public class UserService {
             String accessToken = jwtService.generateToken(loginDto.getUsername());
 
             UserDto userDto = userMapper.mapTo(fullUserEntity.get());
+            fullUserEntity.get().setLastLoginAt(new Date());
+            userRepo.save(fullUserEntity.get());
             return new LoginResponseDto(userDto, accessToken);
 
         }
@@ -137,7 +144,12 @@ public class UserService {
     }
 
     public UserEntity getUser(String accountNumber) {
+        System.out.println("Account Number: " + accountNumber);
         return userRepo.findByAccountNumber(accountNumber).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+    }
+
+    public UserEntity getUserByUsername(String username) {
+        return userRepo.findByUsername(username).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
     }
 
     public double decreaseBalance(String id, double amount) {
@@ -173,5 +185,12 @@ public class UserService {
                     return userRepo.save(existingUser);
                 }
         ).orElseThrow(() -> new UserException.UserNotFoundException("UserEntity not found"));
+    }
+
+    public UserEntity getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        return userRepo.findByUsername(principal.getUsername())
+                .orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
     }
 }

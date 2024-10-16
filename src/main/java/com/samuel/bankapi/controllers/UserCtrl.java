@@ -162,6 +162,17 @@ public class UserCtrl {
     }
 
 
+    @GetMapping("/{username}")
+    public ResponseEntity<?> getUser(@PathVariable String username) {
+        try {
+            UserEntity userEntity = userService.getUserByUsername(username);
+            UserDto userDto = userMapper.mapTo(userEntity);
+            return new ResponseEntity<>(userDto, HttpStatus.OK);
+        } catch(Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
+    }
 }
 
 
