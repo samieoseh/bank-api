@@ -63,7 +63,7 @@ public class TransactionService {
         }
 
         // check if the amount is greater than 0
-        if (transactionEntity.getAmount() <= 100) {
+        if (transactionEntity.getAmount() < 100) {
             transactionEntity.setStatus(StatusType.FAILED);
             transactionRepo.save(transactionEntity);
             throw new TransactionException.InvalidTransactionException("Amount must be greater than 100");

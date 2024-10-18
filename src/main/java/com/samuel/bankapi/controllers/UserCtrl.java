@@ -165,6 +165,11 @@ public class UserCtrl {
     @GetMapping("/{username}")
     public ResponseEntity<?> getUser(@PathVariable String username) {
         try {
+            if (username.equals("me")) {
+                UserEntity userEntity  = userService.getCurrentUser();
+                UserDto userDto = userMapper.mapTo(userEntity);
+                return new ResponseEntity<>(userDto, HttpStatus.OK);
+            }
             UserEntity userEntity = userService.getUserByUsername(username);
             UserDto userDto = userMapper.mapTo(userEntity);
             return new ResponseEntity<>(userDto, HttpStatus.OK);
