@@ -21,7 +21,6 @@ public class TestDataUtil {
                 .active(true)
                 .emailVerified(true)
                 .phoneNumberVerified(true)
-                .twoFactorAuthEnabled(false)
                 .failedLoginAttempts(0)
                 .build();
     }
