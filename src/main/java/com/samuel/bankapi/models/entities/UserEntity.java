@@ -41,7 +41,7 @@ public class UserEntity {
     private Double balance;
 
     @ManyToOne(cascade = CascadeType.MERGE)
-    @JoinColumn(name = "account_type_id", nullable = false)
+    @JoinColumn(name = "account_type_id")
     private AccountTypeEntity accountType;
 
     @ManyToOne(cascade = CascadeType.MERGE)
@@ -59,10 +59,8 @@ public class UserEntity {
 
     private String profilePictureUrl;
 
-    @Column(nullable = false)
     private boolean emailVerified;
 
-    @Column(nullable = false)
     private boolean phoneNumberVerified;
 
     private int failedLoginAttempts;
