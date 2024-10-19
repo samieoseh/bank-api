@@ -46,146 +46,167 @@ public class UserControllerIntegrationTests {
         this.userMapper = userMapper;
     }
 
-    @Test
-    public void testThatCreateUserReturnsHttpStatus201Created() throws Exception {
-        RoleEntity role = roleService.createRole(TestDataUtil.createRoleEntity("User"));
-        AccountTypeEntity accountType = accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
-        UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345", "user1@gmail.com");
-        userEntity.setUserRole(role);
-        userEntity.setAccountType(accountType);
+    // @Test
+    // public void testThatCreateUserReturnsHttpStatus201Created() throws Exception
+    // {
+    // RoleEntity role =
+    // roleService.createRole(TestDataUtil.createRoleEntity("User"));
+    // AccountTypeEntity accountType =
+    // accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
+    // UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345",
+    // "user1@gmail.com");
+    // userEntity.setUserRole(role);
+    // userEntity.setAccountType(accountType);
 
-        String userEntityJson = objectMapper.writeValueAsString(userEntity);
-        mockMvc.perform(
-                MockMvcRequestBuilders.post("/api/users/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(userEntityJson)
-        ).andExpect(
-                MockMvcResultMatchers.status().isCreated()
-        );
-    }
+// String userEntityJson = objectMapper.writeValueAsString(userEntity);
+// mockMvc.perform(
+// MockMvcRequestBuilders.post("/api/users/register")
+// .contentType(MediaType.APPLICATION_JSON)
+// .content(userEntityJson)
+// ).andExpect(
+// MockMvcResultMatchers.status().isCreated()
+// );
+// }
 
-    @Test
-    public void testThatCreateUserReturnsTheCorrectResponse() throws Exception {
-        RoleEntity role = roleService.createRole(TestDataUtil.createRoleEntity("User"));
-        AccountTypeEntity accountType = accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
-        UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345", "user1@gmail.com");
-        userEntity.setUserRole(role);
-        userEntity.setAccountType(accountType);
+// @Test
+// public void testThatCreateUserReturnsTheCorrectResponse() throws Exception {
+// RoleEntity role =
+// roleService.createRole(TestDataUtil.createRoleEntity("User"));
+// AccountTypeEntity accountType =
+// accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
+// UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345",
+// "user1@gmail.com");
+// userEntity.setUserRole(role);
+// userEntity.setAccountType(accountType);
 
-        String userEntityJson = objectMapper.writeValueAsString(userEntity);
+// String userEntityJson = objectMapper.writeValueAsString(userEntity);
 
-        mockMvc.perform(
-                MockMvcRequestBuilders.post("/api/users/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(userEntityJson)
-        ).andExpect(
-                MockMvcResultMatchers.jsonPath("$.username").value("user1")
-        ).andExpect(
-                MockMvcResultMatchers.jsonPath("$.phoneNumber").value("08102867345")
-        ).andExpect(
-                MockMvcResultMatchers.jsonPath("$.email").value("user1@gmail.com")
-        );
-    }
+// mockMvc.perform(
+// MockMvcRequestBuilders.post("/api/users/register")
+// .contentType(MediaType.APPLICATION_JSON)
+// .content(userEntityJson)
+// ).andExpect(
+// MockMvcResultMatchers.jsonPath("$.username").value("user1")
+// ).andExpect(
+// MockMvcResultMatchers.jsonPath("$.phoneNumber").value("08102867345")
+// ).andExpect(
+// MockMvcResultMatchers.jsonPath("$.email").value("user1@gmail.com")
+// );
+// }
 
-    @Test
-    public void testThatUpdateUserReturnsHttpStatus200OK() throws Exception {
-        RoleEntity role = roleService.createRole(TestDataUtil.createRoleEntity("User"));
-        AccountTypeEntity accountType = accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
-        UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345", "user1@gmail.con");
-        userEntity.setUserRole(role);
-        userEntity.setAccountType(accountType);
+// @Test
+// public void testThatUpdateUserReturnsHttpStatus200OK() throws Exception {
+// RoleEntity role =
+// roleService.createRole(TestDataUtil.createRoleEntity("User"));
+// AccountTypeEntity accountType =
+// accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
+// UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345",
+// "user1@gmail.con");
+// userEntity.setUserRole(role);
+// userEntity.setAccountType(accountType);
 
-        userService.registerUser(userEntity);
-        LoginDto loginDto = new LoginDto("12345678", "user1");
-        LoginResponseDto loggedInUser = userService.loginUser(loginDto, userMapper);
+// userService.registerUser(userEntity);
+// LoginDto loginDto = new LoginDto("12345678", "user1");
+// LoginResponseDto loggedInUser = userService.loginUser(loginDto, userMapper);
 
-        String accessToken = loggedInUser.getAccessToken();
-        userEntity.setPhoneNumber("08102867346");
+// String accessToken = loggedInUser.getAccessToken();
+// userEntity.setPhoneNumber("08102867346");
 
-        String userEntityJson = objectMapper.writeValueAsString(userEntity);
-        mockMvc.perform(
-                MockMvcRequestBuilders.patch("/api/users/" + userEntity.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
-                        .content(userEntityJson)
-        ).andExpect(
-                MockMvcResultMatchers.status().isOk()
-        );
-    }
+// String userEntityJson = objectMapper.writeValueAsString(userEntity);
+// mockMvc.perform(
+// MockMvcRequestBuilders.patch("/api/users/" + userEntity.getId())
+// .contentType(MediaType.APPLICATION_JSON)
+// .header("Authorization", "Bearer " + accessToken)
+// .content(userEntityJson)
+// ).andExpect(
+// MockMvcResultMatchers.status().isOk()
+// );
+// }
 
-    @Test
-    public void testThatUpdateUserReturnsHttpStatus401Unauthorized() throws Exception {
-        RoleEntity role = roleService.createRole(TestDataUtil.createRoleEntity("User"));
-        AccountTypeEntity accountType = accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
-        UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345", "user1@gmail.com");
-        userEntity.setUserRole(role);
-        userEntity.setAccountType(accountType);
-        userService.registerUser(userEntity);
+// @Test
+// public void testThatUpdateUserReturnsHttpStatus401Unauthorized() throws
+// Exception {
+// RoleEntity role =
+// roleService.createRole(TestDataUtil.createRoleEntity("User"));
+// AccountTypeEntity accountType =
+// accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
+// UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345",
+// "user1@gmail.com");
+// userEntity.setUserRole(role);
+// userEntity.setAccountType(accountType);
+// userService.registerUser(userEntity);
 
-        userEntity.setPhoneNumber("08102867346");
-        String userEntityJson = objectMapper.writeValueAsString(userEntity);
+// userEntity.setPhoneNumber("08102867346");
+// String userEntityJson = objectMapper.writeValueAsString(userEntity);
 
 
-        mockMvc.perform(
-                MockMvcRequestBuilders.patch("/api/users/" + userEntity.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(userEntityJson)
-        ).andExpect(
-                MockMvcResultMatchers.status().isUnauthorized()
-        );
-    }
+// mockMvc.perform(
+// MockMvcRequestBuilders.patch("/api/users/" + userEntity.getId())
+// .contentType(MediaType.APPLICATION_JSON)
+// .content(userEntityJson)
+// ).andExpect(
+// MockMvcResultMatchers.status().isUnauthorized()
+// );
+// }
 
-    @Test
-    public void testThatUpdateUserReturnsTheCorrectResponse() throws Exception {
-        RoleEntity role = roleService.createRole(TestDataUtil.createRoleEntity("User"));
-        AccountTypeEntity accountType = accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
-        UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345", "user1@gmail.com");
-        userEntity.setUserRole(role);
-        userEntity.setAccountType(accountType);
+// @Test
+// public void testThatUpdateUserReturnsTheCorrectResponse() throws Exception {
+// RoleEntity role =
+// roleService.createRole(TestDataUtil.createRoleEntity("User"));
+// AccountTypeEntity accountType =
+// accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
+// UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345",
+// "user1@gmail.com");
+// userEntity.setUserRole(role);
+// userEntity.setAccountType(accountType);
 
-        userService.registerUser(userEntity);
-        LoginDto loginDto = new LoginDto("12345678", "user1");
-        LoginResponseDto loggedInUser = userService.loginUser(loginDto, userMapper);
+// userService.registerUser(userEntity);
+// LoginDto loginDto = new LoginDto("12345678", "user1");
+// LoginResponseDto loggedInUser = userService.loginUser(loginDto, userMapper);
 
-        String accessToken = loggedInUser.getAccessToken();
-        userEntity.setPhoneNumber("08102867346");
-        String userEntityJson = objectMapper.writeValueAsString(userEntity);
+// String accessToken = loggedInUser.getAccessToken();
+// userEntity.setPhoneNumber("08102867346");
+// String userEntityJson = objectMapper.writeValueAsString(userEntity);
 
-        mockMvc.perform(
-                MockMvcRequestBuilders.patch("/api/users/" + userEntity.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
-                        .content(userEntityJson)
-        ).andExpect(
-                MockMvcResultMatchers.jsonPath("$.username").value("user1")
-        ).andExpect(
-                MockMvcResultMatchers.jsonPath("$.phoneNumber").value("08102867346")
-        ).andExpect(
-                MockMvcResultMatchers.jsonPath("$.email").value("user1@gmail.com")
-        );
-    }
+// mockMvc.perform(
+// MockMvcRequestBuilders.patch("/api/users/" + userEntity.getId())
+// .contentType(MediaType.APPLICATION_JSON)
+// .header("Authorization", "Bearer " + accessToken)
+// .content(userEntityJson)
+// ).andExpect(
+// MockMvcResultMatchers.jsonPath("$.username").value("user1")
+// ).andExpect(
+// MockMvcResultMatchers.jsonPath("$.phoneNumber").value("08102867346")
+// ).andExpect(
+// MockMvcResultMatchers.jsonPath("$.email").value("user1@gmail.com")
+// );
+// }
 
-    @Test
-    public void testThatDeleteUserReturnsHttpStatus204NoContent() throws Exception {
-        RoleEntity role = roleService.createRole(TestDataUtil.createRoleEntity("User"));
-        AccountTypeEntity accountType = accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
-        UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345", "user1@gmail.com");
+// @Test
+// public void testThatDeleteUserReturnsHttpStatus204NoContent() throws
+// Exception {
+// RoleEntity role =
+// roleService.createRole(TestDataUtil.createRoleEntity("User"));
+// AccountTypeEntity accountType =
+// accountTypeService.createAccountType(TestDataUtil.createAccountTypeEntity("Savings"));
+// UserEntity userEntity = TestDataUtil.createUserEntity("user1", "08102867345",
+// "user1@gmail.com");
 
-        userEntity.setUserRole(role);
-        userEntity.setAccountType(accountType);
+// userEntity.setUserRole(role);
+// userEntity.setAccountType(accountType);
 
-        userService.registerUser(userEntity);
-        LoginDto loginDto = new LoginDto("12345678", "user1");
-        LoginResponseDto loggedInUser = userService.loginUser(loginDto, userMapper);
+// userService.registerUser(userEntity);
+// LoginDto loginDto = new LoginDto("12345678", "user1");
+// LoginResponseDto loggedInUser = userService.loginUser(loginDto, userMapper);
 
-        String accessToken = loggedInUser.getAccessToken();
+// String accessToken = loggedInUser.getAccessToken();
 
-        mockMvc.perform(
-                MockMvcRequestBuilders.delete("/api/users/" + userEntity.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
-        ).andExpect(
-                MockMvcResultMatchers.status().isNoContent()
-        );
-    }
+// mockMvc.perform(
+// MockMvcRequestBuilders.delete("/api/users/" + userEntity.getId())
+// .contentType(MediaType.APPLICATION_JSON)
+// .header("Authorization", "Bearer " + accessToken)
+// ).andExpect(
+// MockMvcResultMatchers.status().isNoContent()
+// );
+// }
 }

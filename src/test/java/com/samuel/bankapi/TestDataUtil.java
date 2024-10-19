@@ -15,7 +15,7 @@ public class TestDataUtil {
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .fullName("Test User")
-                .address("123, Test Street, Test City")
+                .address("123, Test Street, Test Cit")
                 .accountNumber(phoneNumber.substring(1))
                 .balance(10000.0)
                 .active(true)

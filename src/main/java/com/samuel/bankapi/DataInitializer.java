@@ -32,7 +32,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!adminRole.isPresent()) {
             RoleEntity adminRoleEntity = new RoleEntity();
             adminRoleEntity.setRoleName("admin");
-            adminRoleEntity.setDescription("admin role");
+            adminRoleEntity.setDescription("admin description");
             adminRoleEntity.setActive(true);
             roleRepo.save(adminRoleEntity);
         }
