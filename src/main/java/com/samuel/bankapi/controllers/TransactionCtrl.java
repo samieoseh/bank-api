@@ -3,7 +3,6 @@ package com.samuel.bankapi.controllers;
 import com.samuel.bankapi.mappers.Mapper;
 import com.samuel.bankapi.models.dto.TransactionDto;
 import com.samuel.bankapi.models.dto.TransactionReadDto;
-import com.samuel.bankapi.models.dto.UserDto;
 import com.samuel.bankapi.models.dto.VerifyUserDto;
 import com.samuel.bankapi.models.entities.TransactionEntity;
 import com.samuel.bankapi.models.entities.UserEntity;

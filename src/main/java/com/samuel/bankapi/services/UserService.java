@@ -36,6 +36,7 @@ public class UserService {
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
+
     public List<UserEntity> getUsers() {
         return StreamSupport.stream(userRepo.findAll().spliterator(), false).toList();
     }
