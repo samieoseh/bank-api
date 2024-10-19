@@ -40,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
         Optional<UserEntity> adminUser = userRepo.findByUsername("admin");
 
         if (!adminUser.isPresent()) {
+            Optional<RoleEntity> savedAdminRole = roleRepo.findByRoleName("admin");
 
             UserEntity userEntity = new UserEntity();
             userEntity.setUsername("admin");
@@ -48,7 +49,7 @@ public class DataInitializer implements CommandLineRunner {
             userEntity.setPassword(password);
             userEntity.setAccountNumber("1234567890");
             userEntity.setPhoneNumber("12345678912");
-            userEntity.setUserRole(adminRole.get());
+            userEntity.setUserRole(savedAdminRole.get());
             userEntity.setFullName("Admin Admin");
             userEntity.setCreatedAt(new Date());
             userRepo.save(userEntity);
