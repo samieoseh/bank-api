@@ -40,6 +40,7 @@ public class TransactionCtrl {
     @GetMapping("/verify-and-get-user/{accountNumber}")
     public ResponseEntity<VerifyUserDto> verifyAndGetUser(@PathVariable String accountNumber) {
         if (userService.isExists(accountNumber)) {
+            System.out.println("User exists: " + accountNumber);
             UserEntity userEntity = userService.getUser(accountNumber);
             VerifyUserDto verifyUserDto = userMapper.mapTo(userEntity);
             return new ResponseEntity<>(verifyUserDto, HttpStatus.OK);
@@ -52,9 +53,9 @@ public class TransactionCtrl {
     public ResponseEntity<?> verifyBalance(@PathVariable double amount) {
         UserEntity userEntity = userService.getCurrentUser();
         if (transactionService.isBalanceSufficient(userEntity, amount)) {
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(true, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Insufficient Funds", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(false, HttpStatus.FORBIDDEN);
         }
     }
 
@@ -62,7 +63,9 @@ public class TransactionCtrl {
     @Transactional
     public ResponseEntity<?> createTransaction(@RequestBody TransactionDto transactionDto) {
         try {
+            System.out.println("transactionDto: " + transactionDto);
             TransactionEntity transactionEntity = transactionMapper.mapFrom(transactionDto);
+            System.out.println("Transaction entity: " + transactionEntity);
             TransactionEntity createdTransactionEntity = transactionService.createTransaction(transactionEntity);
             TransactionDto createdTransactionDto = transactionMapper.mapTo(createdTransactionEntity);
             return new ResponseEntity<>(createdTransactionDto, HttpStatus.CREATED);

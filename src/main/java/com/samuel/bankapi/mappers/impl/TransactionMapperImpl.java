@@ -30,11 +30,15 @@ public class TransactionMapperImpl implements Mapper<TransactionEntity, Transact
 
     @Override
     public TransactionEntity mapFrom(TransactionDto transactionDto) {
+        System.out.println("Sender: " + transactionDto.getSender());
+        System.out.println("Reciever: " + transactionDto.getReciever());
 
-        TransactionEntity entity =  modelMapper.map(transactionDto, TransactionEntity.class);
+        TransactionEntity entity = modelMapper.map(transactionDto, TransactionEntity.class);
 
-        entity.setSender(userService.getUser(transactionDto.getSender()));
-        entity.setReciever(userService.getUser(transactionDto.getReciever()));
+        System.out.println("entity: " + entity);
+
+        entity.setSender(userService.getUserById(transactionDto.getSender()));
+        entity.setReciever(userService.getUserById(transactionDto.getReciever()));
 
         return entity;
     }

@@ -118,19 +118,6 @@ public class TransactionService {
         return balances;
     }
 
-    private String toJson(Object... keyValues) throws JsonProcessingException {
-        Map<String, Object> map = new HashMap<>();
-        for (int i = 0; i < keyValues.length; i += 2) {
-            if (!(keyValues[i] instanceof String key)) {
-                throw new IllegalArgumentException("Keys must be of type String.");
-            }
-            Object value = keyValues[i + 1];
-            map.put(key, value);
-        }
-
-        return objectMapper.writeValueAsString(map);
-    }
-
     public TransactionEntity createTransaction(TransactionEntity transactionEntity) throws JsonProcessingException {
         // Initialize transaction
         initializeTransaction(transactionEntity);

@@ -149,6 +149,11 @@ public class UserService {
         return userRepo.findByAccountNumber(accountNumber).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
     }
 
+    public UserEntity getUserById(String id) {
+        return userRepo.findById(id)
+                .orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+    }
+
     public UserEntity getUserByUsername(String username) {
         return userRepo.findByUsername(username).orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
     }

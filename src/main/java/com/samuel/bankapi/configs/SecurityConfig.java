@@ -1,4 +1,3 @@
-
 package com.samuel.bankapi.configs;
 
 import com.samuel.bankapi.filters.JwtFilter;
