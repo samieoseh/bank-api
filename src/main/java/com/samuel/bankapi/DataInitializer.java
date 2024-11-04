@@ -44,6 +44,7 @@ public class DataInitializer implements CommandLineRunner {
 
             UserEntity userEntity = new UserEntity();
             userEntity.setUsername("admin");
+            userEntity.setActive(true);
             userEntity.setEmail("admin@example.com");
             String password = encoder.encode("admin");
             userEntity.setPassword(password);
@@ -51,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
             userEntity.setPhoneNumber("12345678912");
             userEntity.setUserRole(savedAdminRole.get());
             userEntity.setFullName("Admin Admin");
+            userEntity.setBalance(1000.00);
             userEntity.setCreatedAt(new Date());
             userRepo.save(userEntity);
         }

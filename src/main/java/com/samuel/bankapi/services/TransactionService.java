@@ -9,7 +9,9 @@ import com.samuel.bankapi.enums.StatusType;
 import com.samuel.bankapi.models.UserPrincipal;
 import com.samuel.bankapi.models.entities.TransactionAuditEntity;
 import com.samuel.bankapi.models.entities.TransactionEntity;
+import com.samuel.bankapi.models.entities.TransactionReceiptEntity;
 import com.samuel.bankapi.models.entities.UserEntity;
+import com.samuel.bankapi.repositories.TransactionReceiptRepo;
 import com.samuel.bankapi.repositories.TransactionRepo;
 import com.samuel.bankapi.repositories.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +41,10 @@ public class TransactionService {
     private TransactionAuditService transactionAuditService;
 
     @Autowired
-    private  UserService userService;
+    private UserService userService;
+
+    @Autowired
+    private TransactionReceiptRepo transactionReceiptRepo;
 
     public boolean isBalanceSufficient(UserEntity userEntity, double amount) {
         // check if the userEntity balance is greater than the amount
@@ -121,22 +126,68 @@ public class TransactionService {
     public TransactionEntity createTransaction(TransactionEntity transactionEntity) throws JsonProcessingException {
         // Initialize transaction
         initializeTransaction(transactionEntity);
+        System.out.println("initialized successfully");
 
 
         // Log audit for transaction initiation
         logTransactionAudit(transactionEntity, null, objectMapper.writeValueAsString(transactionEntity), ActionType.CREATE);
 
+        System.out.println("log transaction audit");
         // Validate transaction input
         validateTransactionInputAndLogAudit(transactionEntity);
+
+        System.out.println("validated transaction input");
 
         // Authenticate transaction
         authenticateTransactionAndLogAudit(transactionEntity);
 
+        System.out.println("authenticated transaction");
+
         // Pre-process transaction
         preProcessTransactionAndLogAudit(transactionEntity);
 
+        System.out.println("pre-processed transaction");
+
         // Process transaction
         processTransactionAndLogAudit(transactionEntity);
+
+        System.out.println("processed transaction");
+        transactionEntity.setTransactionDate(new Date());
+
+        // create two transaction receipts for the sender and receiver
+        TransactionReceiptEntity senderReceipt = TransactionReceiptEntity.builder()
+                .transaction(transactionEntity)
+                .transactionType("DEBIT")
+                .transactionDate(transactionEntity.getTransactionDate())
+                .amount(transactionEntity.getAmount())
+                .previousBalance(transactionEntity.getSender().getBalance() +
+                        transactionEntity.getAmount())
+                .newBalance(transactionEntity.getSender()
+                        .getBalance())
+                .user(transactionEntity.getSender())
+                .description("Debit transaction")
+                .status("COMPLETED")
+                .reference(transactionEntity.getId())
+                .build();
+
+        transactionReceiptRepo.save(senderReceipt);
+
+        TransactionReceiptEntity receiverReceipt = TransactionReceiptEntity.builder()
+                .transaction(transactionEntity)
+                .transactionType("CREDIT")
+                .transactionDate(transactionEntity.getTransactionDate())
+                .amount(transactionEntity.getAmount())
+                .previousBalance(transactionEntity.getReciever().getBalance() -
+                        transactionEntity.getAmount())
+                .newBalance(transactionEntity.getReciever()
+                        .getBalance())
+                .user(transactionEntity.getReciever())
+                .description("Credit transaction")
+                .status("COMPLETED")
+                .reference(transactionEntity.getId())
+                .build();
+
+        transactionReceiptRepo.save(receiverReceipt);
 
         return transactionEntity;
     }
@@ -229,5 +280,9 @@ public class TransactionService {
 
     public List<TransactionEntity> getTransactions() {
         return StreamSupport.stream(transactionRepo.findAllByOrderByTransactionDateDesc().spliterator(), false).toList();
+    }
+
+    public TransactionEntity getTransaction(String id) {
+        return transactionRepo.findById(id).orElse(null);
     }
 }

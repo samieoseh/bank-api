@@ -6,10 +6,12 @@ import com.samuel.bankapi.models.dto.LoginDto;
 import com.samuel.bankapi.models.dto.LoginResponseDto;
 import com.samuel.bankapi.models.dto.UserDto;
 import com.samuel.bankapi.models.entities.UserEntity;
+import com.samuel.bankapi.payload.UserMessage;
+import com.samuel.bankapi.producer.KafkaJsonProducer;
 import com.samuel.bankapi.services.UserService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -21,10 +23,13 @@ public class UserCtrl {
     private UserService userService;
 
     private final Mapper<UserEntity, UserDto> userMapper;
+    private final KafkaJsonProducer kafkaJsonProducer;
 
-    public UserCtrl(UserService userService, Mapper<UserEntity, UserDto> userMapper) {
+    public UserCtrl(UserService userService, Mapper<UserEntity, UserDto> userMapper,
+            KafkaJsonProducer kafkaJsonProducer) {
         this.userService = userService;
         this.userMapper = userMapper;
+        this.kafkaJsonProducer = kafkaJsonProducer;
     }
 
     @GetMapping("")
@@ -36,7 +41,13 @@ public class UserCtrl {
 
     @PostMapping("/register")
     public ResponseEntity<UserEntity> registerUser(@RequestBody UserEntity userEntity) {
-        return new ResponseEntity<>(userService.registerUser(userEntity), HttpStatus.CREATED);
+        UserEntity user = userService.registerUser(userEntity);
+        UserMessage userMessage = new UserMessage(
+                user.getFullName(),
+                user.getUsername(),
+                user.getEmail());
+        kafkaJsonProducer.sendMessage(userMessage);
+        return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
     @GetMapping("/register/validate-username/{username}")

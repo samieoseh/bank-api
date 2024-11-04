@@ -3,9 +3,12 @@ package com.samuel.bankapi.controllers;
 import com.samuel.bankapi.mappers.Mapper;
 import com.samuel.bankapi.models.dto.TransactionDto;
 import com.samuel.bankapi.models.dto.TransactionReadDto;
+import com.samuel.bankapi.models.dto.UserDto;
 import com.samuel.bankapi.models.dto.VerifyUserDto;
 import com.samuel.bankapi.models.entities.TransactionEntity;
 import com.samuel.bankapi.models.entities.UserEntity;
+import com.samuel.bankapi.payload.TransactionMessage;
+import com.samuel.bankapi.producer.KafkaJsonProducer;
 import com.samuel.bankapi.services.TransactionService;
 import com.samuel.bankapi.services.UserService;
 import jakarta.transaction.Transactional;
@@ -24,6 +27,9 @@ public class TransactionCtrl {
     TransactionService transactionService;
 
     @Autowired
+    private KafkaJsonProducer kafkaJsonProducer;
+
+    @Autowired
     UserService userService;
 
     @Autowired
@@ -36,6 +42,7 @@ public class TransactionCtrl {
 
     @Autowired
     Mapper<UserEntity, VerifyUserDto> userMapper;
+
 
     @GetMapping("/verify-and-get-user/{accountNumber}")
     public ResponseEntity<VerifyUserDto> verifyAndGetUser(@PathVariable String accountNumber) {
@@ -60,14 +67,25 @@ public class TransactionCtrl {
     }
 
     @PostMapping("")
-    @Transactional
+    // @Transactional
     public ResponseEntity<?> createTransaction(@RequestBody TransactionDto transactionDto) {
         try {
-            System.out.println("transactionDto: " + transactionDto);
             TransactionEntity transactionEntity = transactionMapper.mapFrom(transactionDto);
-            System.out.println("Transaction entity: " + transactionEntity);
             TransactionEntity createdTransactionEntity = transactionService.createTransaction(transactionEntity);
             TransactionDto createdTransactionDto = transactionMapper.mapTo(createdTransactionEntity);
+            TransactionMessage transactionMessage = new TransactionMessage();
+            transactionMessage.setTransactionType(createdTransactionDto.getTransactionType());
+            transactionMessage.setTransactionDescription(createdTransactionDto.getDescription());
+            transactionMessage.setTransactionAmount(createdTransactionDto.getAmount());
+            transactionMessage.setTransactionDate(createdTransactionEntity.getTransactionDate());
+            UserEntity sender = userService.getUserById(createdTransactionDto.getSender());
+            UserEntity receiver = userService.getUserById(createdTransactionDto.getReciever());
+            VerifyUserDto senderDto = userMapper.mapTo(sender);
+            VerifyUserDto receiverDto = userMapper.mapTo(receiver);
+            transactionMessage.setSender(senderDto);
+            transactionMessage.setReceiver(receiverDto);
+            kafkaJsonProducer.sendMessage(transactionMessage);
+
             return new ResponseEntity<>(createdTransactionDto, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
