@@ -11,4 +11,6 @@ import org.springframework.stereotype.Repository;
 public interface RoleRepo extends CrudRepository<RoleEntity, String> {
 
     Optional<RoleEntity> findByRoleName(String string);
+
+    boolean existsByRoleName(String roleName);
 }

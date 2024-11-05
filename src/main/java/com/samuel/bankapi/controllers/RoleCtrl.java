@@ -33,9 +33,23 @@ public class RoleCtrl {
         return new ResponseEntity<>(roleDtos, HttpStatus.OK);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<RoleDto> getRole(@PathVariable String id) {
+        RoleEntity roleEntity = roleService.getRole(id);
+
+        if (roleEntity == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        RoleDto roleDto = roleMapper.mapTo(roleEntity);
+        return new ResponseEntity<>(roleDto, HttpStatus.OK);
+
+    }
+
     @PostMapping("")
-    public ResponseEntity<RoleDto> createRole(@RequestBody RoleDto roleDto) {
+    public ResponseEntity<?> createRole(@RequestBody RoleDto roleDto) {
         RoleEntity roleEntity = roleMapper.mapFrom(roleDto);
+
         RoleEntity createdRoleEntity = roleService.createRole(roleEntity);
         RoleDto createdRoleDto = roleMapper.mapTo(createdRoleEntity);
         return new ResponseEntity<>(createdRoleDto, HttpStatus.CREATED);

@@ -133,7 +133,6 @@ public class UserCtrl {
     @PatchMapping("/complete-registration")
     public ResponseEntity<?> completeRegistration(@RequestBody UserEntity userEntity) {
         try {
-            System.out.println("user entity" + userEntity);
             UserEntity updatedUserEntity = userService.completeRegistration(userEntity);
             UserDto updatedUserDto = userMapper.mapTo(updatedUserEntity);
             return new ResponseEntity<>(updatedUserDto, HttpStatus.OK);
@@ -155,10 +154,10 @@ public class UserCtrl {
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
             if (!userService.isExists(id)) {
-                return new ResponseEntity<>("UserEntity not found", HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
             }
             userService.deleteUser(id);
-            return new ResponseEntity<>("UserEntity deleted", HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>("User deleted", HttpStatus.NO_CONTENT);
         }
         catch (UserException.UserNotFoundException e) {
             return new ResponseEntity<>(
@@ -182,6 +181,11 @@ public class UserCtrl {
                 return new ResponseEntity<>(userDto, HttpStatus.OK);
             }
             UserEntity userEntity = userService.getUserByUsername(username);
+
+            if (userEntity == null) {
+                return new ResponseEntity<>("UserEntity not found", HttpStatus.NOT_FOUND);
+            }
+
             UserDto userDto = userMapper.mapTo(userEntity);
             return new ResponseEntity<>(userDto, HttpStatus.OK);
         } catch(Exception e) {

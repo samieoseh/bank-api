@@ -137,6 +137,7 @@ public class UserService {
     }
 
     public boolean isEmailValid(String email) {
+        // TODO validate regex on email
         return !userRepo.existsByEmail(email);
     }
 

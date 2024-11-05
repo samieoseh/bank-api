@@ -24,6 +24,7 @@ public class RoleService {
 
     public RoleEntity updateRole(String id, RoleEntity roleEntity) {
         roleEntity.setId(id);
+        System.out.println("RoleEntity: " + roleEntity);
         return roleRepo.findById(id).map(
                 existingRole -> {
                     Optional.ofNullable(roleEntity.getRoleName()).ifPresent(existingRole::setRoleName);
@@ -40,5 +41,13 @@ public class RoleService {
 
     public boolean isExists(String id) {
         return roleRepo.existsById(id);
+    }
+
+    public boolean isExistsByName(String roleName) {
+        return roleRepo.existsByRoleName(roleName);
+    }
+
+    public RoleEntity getRole(String id) {
+        return roleRepo.findById(id).orElse(null);
     }
 }

@@ -14,6 +14,9 @@ import com.samuel.bankapi.models.entities.UserEntity;
 import com.samuel.bankapi.repositories.TransactionReceiptRepo;
 import com.samuel.bankapi.repositories.TransactionRepo;
 import com.samuel.bankapi.repositories.UserRepo;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,6 +30,7 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 
 @Service
+@Slf4j
 public class TransactionService {
     @Autowired
     private UserRepo userRepo;
@@ -80,6 +84,22 @@ public class TransactionService {
             transactionRepo.save(transactionEntity);
             throw new TransactionException.InvalidTransactionException("Insufficient funds");
         }
+
+        // check if the sender id is same as the current user logged in when current
+        // user logged has role user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        UserEntity userEntity = userRepo.findByUsername(principal.getUsername())
+                .orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
+
+        if (userEntity.getUserRole().getRoleName().equals("user")) {
+            if (!transactionEntity.getSender().getId().equals(userEntity.getId())) {
+                transactionEntity.setStatus(StatusType.FAILED);
+                transactionRepo.save(transactionEntity);
+                throw new TransactionException.InvalidTransactionException("Sender must be the authenticated user");
+            }
+        }
+
         return true;
     }
 
@@ -87,6 +107,7 @@ public class TransactionService {
         // get the current logged in user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
         UserEntity userEntity = userRepo.findByUsername(principal.getUsername())
                 .orElseThrow(() -> new UserException.UserNotFoundException("User not found"));
 
@@ -123,35 +144,39 @@ public class TransactionService {
         return balances;
     }
 
+    private double getNonNullBalance(Double balance) {
+        if (balance == null) {
+            throw new TransactionException.InvalidTransactionException("Balance cannot be null");
+        }
+        return balance;
+    }
+
     public TransactionEntity createTransaction(TransactionEntity transactionEntity) throws JsonProcessingException {
         // Initialize transaction
         initializeTransaction(transactionEntity);
-        System.out.println("initialized successfully");
+        log.info(String.format("Initialized transaction:: %s", transactionEntity.getId()));
 
 
         // Log audit for transaction initiation
         logTransactionAudit(transactionEntity, null, objectMapper.writeValueAsString(transactionEntity), ActionType.CREATE);
+        log.info(String.format("Log transaction audit:: %s, %s", transactionEntity.getId(), ActionType.CREATE));
 
-        System.out.println("log transaction audit");
         // Validate transaction input
         validateTransactionInputAndLogAudit(transactionEntity);
-
-        System.out.println("validated transaction input");
+        log.info(String.format("Transaction validated and logged:: %s", transactionEntity.getId()));
 
         // Authenticate transaction
         authenticateTransactionAndLogAudit(transactionEntity);
-
-        System.out.println("authenticated transaction");
+        log.info(String.format("Transaction authenticated and logged:: %s", transactionEntity.getId()));
 
         // Pre-process transaction
         preProcessTransactionAndLogAudit(transactionEntity);
-
-        System.out.println("pre-processed transaction");
+        log.info(String.format("Transaction preprocessed and logged:: %s", transactionEntity.getId()));
 
         // Process transaction
         processTransactionAndLogAudit(transactionEntity);
+        log.info(String.format("Transaction processed and logged:: %s", transactionEntity.getId()));
 
-        System.out.println("processed transaction");
         transactionEntity.setTransactionDate(new Date());
 
         // create two transaction receipts for the sender and receiver
@@ -160,34 +185,38 @@ public class TransactionService {
                 .transactionType("DEBIT")
                 .transactionDate(transactionEntity.getTransactionDate())
                 .amount(transactionEntity.getAmount())
-                .previousBalance(transactionEntity.getSender().getBalance() +
-                        transactionEntity.getAmount())
-                .newBalance(transactionEntity.getSender()
-                        .getBalance())
+                .previousBalance(
+                        getNonNullBalance(transactionEntity.getSender().getBalance()) + transactionEntity.getAmount())
+                .newBalance(
+                        getNonNullBalance(transactionEntity.getSender().getBalance()))
                 .user(transactionEntity.getSender())
                 .description("Debit transaction")
                 .status("COMPLETED")
                 .reference(transactionEntity.getId())
                 .build();
 
-        transactionReceiptRepo.save(senderReceipt);
+        TransactionReceiptEntity createdSenderReceipt = transactionReceiptRepo.save(senderReceipt);
+        log.info(String.format("Sender TransactionReceipt generated:: %s", createdSenderReceipt.getId()));
 
         TransactionReceiptEntity receiverReceipt = TransactionReceiptEntity.builder()
                 .transaction(transactionEntity)
                 .transactionType("CREDIT")
                 .transactionDate(transactionEntity.getTransactionDate())
                 .amount(transactionEntity.getAmount())
-                .previousBalance(transactionEntity.getReciever().getBalance() -
+                .previousBalance(getNonNullBalance(transactionEntity.getReciever()
+                        .getBalance()) -
                         transactionEntity.getAmount())
-                .newBalance(transactionEntity.getReciever()
-                        .getBalance())
+                .newBalance(getNonNullBalance(transactionEntity.getReciever()
+                        .getBalance()))
                 .user(transactionEntity.getReciever())
                 .description("Credit transaction")
                 .status("COMPLETED")
                 .reference(transactionEntity.getId())
                 .build();
 
-        transactionReceiptRepo.save(receiverReceipt);
+        TransactionReceiptEntity createdReceiverReceipt = transactionReceiptRepo.save(receiverReceipt);
+        log.info(String.format("Receiver TransactionReceipt generated:: %s", createdReceiverReceipt.getId()));
+        log.info(String.format("Done processing transaction:: %s", transactionEntity.getId()));
 
         return transactionEntity;
     }

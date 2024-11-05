@@ -43,4 +43,8 @@ public class AccountTypeService {
     public boolean isExists(String id) {
         return accountTypeRepo.existsById(id);
     }
+
+    public AccountTypeEntity getAccountType(String id) {
+        return accountTypeRepo.findById(id).orElse(null);
+    }
 }

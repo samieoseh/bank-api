@@ -4,7 +4,6 @@ import com.samuel.bankapi.mappers.Mapper;
 import com.samuel.bankapi.models.dto.AccountTypeDto;
 import com.samuel.bankapi.models.entities.AccountTypeEntity;
 import com.samuel.bankapi.services.AccountTypeService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +27,18 @@ public class AccountTypeCtrl {
         List<AccountTypeDto> accountTypeDtos = accountTypeEntities.stream().map(accountTypeDtoMapper::mapTo).toList();
 
         return new ResponseEntity<>(accountTypeDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AccountTypeDto> getAccountType(@PathVariable String id) {
+        AccountTypeEntity accountTypeEntity = accountTypeService.getAccountType(id);
+        if (accountTypeEntity == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        AccountTypeDto accountTypeDto = accountTypeDtoMapper.mapTo(accountTypeEntity);
+        return new ResponseEntity<>(accountTypeDto, HttpStatus.OK);
+
     }
 
     @PostMapping("")
